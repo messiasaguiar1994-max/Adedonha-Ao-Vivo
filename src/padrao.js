@@ -25,11 +25,11 @@ export const PADRAO = {
   },
 
   // ---- Rodada ----
-  tempoRodada: 60,           // segundos
+  tempoRodada: 30,           // segundos
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 2,
+  versaoConfig: 3,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
@@ -73,7 +73,7 @@ export const PADRAO = {
   },
 
   // ---- Relâmpago ----
-  relampago: { tempo: 30 },
+  relampago: { tempo: 15 },
 
   // ---- Presentes ----
   presentes: {
@@ -121,10 +121,14 @@ export function mesclar(base, extra) {
 // atualiza configurações salvas de versões antigas (uma categoria por rodada)
 export function migrar(cfg) {
   if ((cfg.versaoConfig || 1) < 2) {
-    cfg.versaoConfig = 2;
     cfg.validacao.modo = 'dicionario';
     if (cfg.tempoRodada > 60) cfg.tempoRodada = 60;
     for (const r of cfg.presentes?.regras || []) if (r.acao === 'eliminar_categoria') r.acao = 'trocar_categoria';
+  }
+  if (cfg.versaoConfig < 3) {
+    cfg.versaoConfig = 3;
+    cfg.tempoRodada = 30; // rodadas de 30 segundos
+    if (cfg.relampago) cfg.relampago.tempo = 15;
   }
   return cfg;
 }
