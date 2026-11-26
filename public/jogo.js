@@ -30,7 +30,7 @@
 
   // ---------- utilidades ----------
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let efeitos = { sons: true, volume: 0.6, animacoes: true, confete: true, fotoPerfil: true };
+  let efeitos = { sons: true, volume: 0.6, animacoes: true, confete: true, fotoPerfil: true, voz: true, musica: true, volumeMusica: 0.3 };
   function avatar(nome, foto, cls = '') {
     const ini = esc(String(nome || '?').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1).toUpperCase() || '?');
     if (foto && efeitos.fotoPerfil) return `<span class="av ${cls}"><img src="${esc(foto)}" referrerpolicy="no-referrer" onerror="this.parentNode.textContent='${ini}'"></span>`;
@@ -42,13 +42,15 @@
   function aplicarEfeitos(e) {
     efeitos = { ...efeitos, ...e };
     Sons.configurar(efeitos);
+    Voz.configurar(efeitos);
+    Musica.configurar(efeitos);
     document.body.classList.toggle('semAnimacao', !efeitos.animacoes);
   }
 
   // ---------- som ----------
   const botaoSom = $('#ativarSom');
   botaoSom.onclick = () => { Sons.desbloquear(); botaoSom.style.display = 'none'; };
-  document.addEventListener('click', () => Sons.desbloquear());
+  document.addEventListener('click', () => { Sons.desbloquear(); Musica.tentarDeNovo(); });
   setTimeout(() => { Sons.desbloquear(); if (efeitos.sons && Sons.bloqueado() && !navigator.userAgent.includes('OBS')) botaoSom.style.display = 'block'; }, 1500);
 
   // ---------- conexão ----------
@@ -249,22 +251,29 @@
     while ($('#alertas').children.length > 3) $('#alertas').firstChild.remove();
   }
 
+  // ---------- frases da voz ----------
+  const FRASE = { nome: 'um nome', animal: 'um animal', cidade: 'uma cidade', pais: 'um país', comida: 'uma comida', fruta: 'uma fruta', objeto: 'um objeto', profissao: 'uma profissão', filme: 'um filme ou série', celebridade: 'uma celebridade' };
+  const fraseCat = (ev) => ev.fala || FRASE[ev.catId] || `categoria ${ev.categoria || ''}`;
+  const nomeFalado = (n) => String(n || '').replace(/[_.]/g, ' ').replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/)[0] || '';
+
   function tratarEvento(ev) {
     switch (ev.tipo) {
-      case 'valendo': alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
+      case 'valendo': Voz.falar(`${fraseCat(ev)} que comece com a letra ${ev.letra}... Valendo!`); alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
       case 'resposta': Sons.tocar('resposta'); break;
-      case 'stop': alerta('STOP!', 'vermelho', 2200, 'gigante'); Sons.tocar('stop'); break;
+      case 'stop': alerta('STOP!', 'vermelho', 2200, 'gigante'); Sons.tocar('stop'); setTimeout(() => Voz.falar('Stop! Acabou o tempo.'), 600); break;
+      case 'melhor_rodada': if (ev.nome) setTimeout(() => Voz.falar(`Quem mais pontuou nessa rodada foi ${nomeFalado(ev.nome)}!`), 3500); break;
       case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
-      case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } break;
-      case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); break;
+      case 'desafio_voz': break;
+      case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou a letra! Agora com a letra ${ev.letra}.`); break;
+      case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); Voz.falar(`Mudou a categoria! Agora vale ${fraseCat(ev)} com a letra ${ev.letra}.`); break;
       case 'categoria_eliminada': alerta(`💥 SAIU: ${esc(ev.cat)}`, 'vermelho'); Sons.tocar('ruim'); break;
-      case 'desafio': alerta(`🎯 ${esc(ev.desafio.nome)}<small>${esc(ev.desafio.descricao)}${ev.catOuro ? ' — ' + esc(ev.catOuro) : ''}</small>`, 'rosa', 3400); Sons.tocar('alerta'); break;
+      case 'desafio': Voz.falar(`Desafio: ${ev.desafio.descricao}`); alerta(`🎯 ${esc(ev.desafio.nome)}<small>${esc(ev.desafio.descricao)}${ev.catOuro ? ' — ' + esc(ev.catOuro) : ''}</small>`, 'rosa', 3400); Sons.tocar('alerta'); break;
       case 'multiplicador': alerta(`✖${ev.valor} PONTOS!`, 'amarelo'); Sons.tocar('alerta'); confete(80); break;
       case 'agendado': alerta(esc(ev.texto), 'ciano', 2600); break;
       // presentes: a tela NÃO mostra quem mandou nem agradece (evita associar presente a recompensa).
       // Só o efeito do jogo aparece (ex.: +5 segundos), como um acontecimento normal da rodada.
       case 'eliminados': alerta(`☠️ ELIMINADOS<small>${ev.nomes.slice(0, 6).map(esc).join(', ')}${ev.nomes.length > 6 ? '...' : ''}</small>`, 'vermelho', 3400); Sons.tocar('ruim'); break;
-      case 'campeao': Sons.tocar('campeao'); confete(250); break;
+      case 'campeao': Sons.tocar('campeao'); confete(250); Voz.falar(`Temos um campeão: ${nomeFalado(ev.jogador && ev.jogador.nome)}!`); break;
       case 'pausa': alerta('⏸ PAUSA', 'ciano', 1600); break;
       case 'continuar': alerta('▶ CONTINUANDO!', 'verde', 1400); break;
       case 'reiniciado': alerta('🔁 NOVA PARTIDA!', 'amarelo'); break;

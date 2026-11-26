@@ -96,6 +96,7 @@
       <tr data-i="${i}">
         <td><input type="checkbox" data-c="ativa" ${c.ativa ? 'checked' : ''}></td>
         <td><input type="text" data-c="nome" value="${esc(c.nome)}"></td>
+        <td><input type="text" data-c="fala" value="${esc(c.fala || '')}" placeholder="automático"></td>
         <td><input type="text" data-c="apelidos" value="${esc((c.apelidos || []).join(', '))}"></td>
         <td><button class="mini perigo" data-rem="${i}">Remover</button></td>
       </tr>`).join('');
@@ -108,6 +109,7 @@
     const cats = structuredClone(cfg.categorias);
     if (campo === 'ativa') cats[i].ativa = ev.target.checked;
     if (campo === 'nome') cats[i].nome = ev.target.value.trim() || cats[i].nome;
+    if (campo === 'fala') cats[i].fala = ev.target.value.trim();
     if (campo === 'apelidos') cats[i].apelidos = ev.target.value.split(',').map((s) => s.trim()).filter(Boolean);
     salvar({ categorias: cats });
   });

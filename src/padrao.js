@@ -96,6 +96,9 @@ export const PADRAO = {
   efeitos: {
     sons: true,
     volume: 0.6,
+    voz: true,             // voz que anuncia a categoria e a letra
+    musica: true,          // música de fundo
+    volumeMusica: 0.3,
     animacoes: true,
     confete: true,
     fotoPerfil: true,

@@ -108,7 +108,7 @@
   <div class="card">
     <h2>Categorias</h2>
     <p class="dica">Marque as que podem sair. A cada rodada o jogo sorteia UMA delas. "Apelidos" são outras formas que o chat pode escrever (ex.: <code>bicho: macaco</code>).</p>
-    <div class="tabelaRolagem alta"><table id="tabCategorias"><thead><tr><th>Ativa</th><th>Nome na tela</th><th>Apelidos (separe por vírgula)</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="tabelaRolagem alta"><table id="tabCategorias"><thead><tr><th>Ativa</th><th>Nome na tela</th><th>Como a voz fala (ex.: uma cor)</th><th>Apelidos (separe por vírgula)</th><th></th></tr></thead><tbody></tbody></table></div>
     <div class="botoes"><button id="btNovaCat" class="verde">+ Adicionar categoria</button></div>
     <div class="linhaCampos">
       <label>Letras que podem ser sorteadas <input type="text" data-cfg="letras" style="width:320px"></label>
@@ -270,7 +270,10 @@
     <h2>Tela e efeitos</h2>
     <div class="campos">
       <label class="chk"><input type="checkbox" data-cfg="efeitos.sons"> Sons</label>
-      <label>Volume <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volume"></label>
+      <label>Volume dos efeitos <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volume"></label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.voz"> Voz anunciando a categoria e a letra</label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.musica"> Música de fundo</label>
+      <label>Volume da música <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volumeMusica"></label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.animacoes"> Animações</label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.confete"> Confete</label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.fotoPerfil"> Foto de perfil dos espectadores</label>

@@ -4,6 +4,13 @@
 import { criarCentral } from '../src/central.js';
 import { PADRAO, mesclar, migrar } from '../src/padrao.js';
 import { ConexoesApp } from './conexoes-app.js';
+import { Capacitor } from '@capacitor/core';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
+
+// voz do próprio celular (Android); no navegador fica a voz do navegador
+if (Capacitor.isNativePlatform()) {
+  window.__falarNativo = (texto) => TextToSpeech.speak({ text: texto, lang: 'pt-BR', rate: 1.0, pitch: 1.0, volume: 1.0, category: 'playback' });
+}
 
 const PREFIXO = 'adedonha:';
 const armazenamento = {

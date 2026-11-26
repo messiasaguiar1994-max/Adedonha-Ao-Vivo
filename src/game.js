@@ -149,7 +149,9 @@ export class Jogo extends Emissor {
     this.inicioRodada = this.agora();
     this.fimEm = this.agora() + this.tempoTotal;
     this.proximaEm = 0;
-    this.alerta('valendo', { letra: this.letra, relampago: this.relampagoRodada });
+    const cat = this.catAtual();
+    const cfgCat = cat && this.cfg.categorias.find((c) => c.id === cat.id);
+    this.alerta('valendo', { letra: this.letra, relampago: this.relampagoRodada, categoria: cat?.nome, catId: cat?.id, fala: cfgCat?.fala || '' });
     this.mudou();
   }
 
@@ -188,6 +190,8 @@ export class Jogo extends Emissor {
     this.aplicarSobrevivencia();
     this.historico.unshift({ rodada: this.rodada, letra: this.letra, jogadores: this.resultado.participantes });
     this.alerta('stop', {});
+    const melhor = this.resultado?.topRodada?.find((t) => t.pts > 0);
+    if (melhor) this.alerta('melhor_rodada', { nome: melhor.nome });
     this.proximaEm = this.agora() + this.cfg.tempoResultado * 1000;
     this.salvarPartida();
     this.mudou();
@@ -492,7 +496,7 @@ export class Jogo extends Emissor {
     if (atual) atual.trocada = true;
     this.categorias.push({ id: nova.id, nome: nova.nome, apelidos: nova.apelidos || [], eliminada: false });
     this.ultimaCat = nova.id;
-    this.alerta('nova_categoria', { cat: nova.nome });
+    this.alerta('nova_categoria', { cat: nova.nome, categoria: nova.nome, catId: nova.id, fala: nova.fala || '', letra: this.letra });
     this.mudou();
     return true;
   }

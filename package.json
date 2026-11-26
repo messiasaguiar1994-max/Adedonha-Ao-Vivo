@@ -9,8 +9,11 @@
     "start": "node server.js",
     "build": "node app/build.mjs"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
+    "@capacitor-community/text-to-speech": "6.1.0",
     "@capacitor/android": "7.6.10",
     "@capacitor/cli": "7.6.10",
     "@capacitor/core": "7.6.10",

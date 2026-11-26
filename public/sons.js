@@ -59,3 +59,168 @@ window.Sons = (() => {
     bloqueado() { const c = contexto(); return !!c && c.state !== 'running'; },
   };
 })();
+
+// ---------------- Música de fundo (gerada pelo próprio jogo, sem arquivo) ----------------
+// A música é "gravada" uma vez na memória (32 segundos) e depois toca em loop perfeito,
+// sem depender de temporizadores — assim ela não engasga no meio da live.
+window.Musica = (() => {
+  let ctx = null;
+  let buffer = null;
+  let fonte = null;
+  let ganho = null;
+  let volume = 0.3;
+  let ligada = false;
+  let gerando = null;
+
+  function contexto() {
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (C) ctx = new C(); }
+    return ctx;
+  }
+
+  async function gerar() {
+    const BPM = 124;
+    const batida = 60 / BPM;
+    const compassos = 16;
+    const dur = compassos * 4 * batida;
+    const taxa = 44100;
+    const O = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const oc = new O(2, Math.ceil(dur * taxa), taxa);
+    const mestre = oc.createGain();
+    mestre.gain.value = 0.8;
+    const comp = oc.createDynamicsCompressor();
+    mestre.connect(comp).connect(oc.destination);
+
+    const ruido = oc.createBuffer(1, taxa, taxa);
+    const d = ruido.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+
+    const f = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    function tom(t, freq, len, tipo, vol, corte = 4000, ataque = 0.005) {
+      const o = oc.createOscillator(); o.type = tipo; o.frequency.value = freq;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = corte;
+      const g = oc.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + ataque);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(fl).connect(g).connect(mestre);
+      o.start(t); o.stop(t + len + 0.05);
+    }
+    function bumbo(t) {
+      const o = oc.createOscillator(); const g = oc.createGain();
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.25);
+      g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.connect(g).connect(mestre); o.start(t); o.stop(t + 0.35);
+    }
+    function barulho(t, len, vol, tipo, freq) {
+      const s = oc.createBufferSource(); s.buffer = ruido;
+      const fl = oc.createBiquadFilter(); fl.type = tipo; fl.frequency.value = freq;
+      const g = oc.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+      s.connect(fl).connect(g).connect(mestre); s.start(t, Math.random() * 0.5); s.stop(t + len + 0.02);
+    }
+
+    // progressão alegre: C  Am  F  G  (em Dó maior)
+    const acordes = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]];
+    const baixos = [36, 33, 29, 31];
+    const melodia = [
+      [72, 0, 74, 76, 0, 79, 76, 0], [76, 0, 74, 72, 0, 69, 72, 0], [69, 0, 72, 74, 0, 77, 76, 74], [74, 0, 71, 74, 0, 79, 0, 0],
+      [79, 0, 77, 76, 0, 74, 76, 0], [76, 0, 72, 69, 0, 72, 74, 0], [77, 0, 76, 74, 0, 72, 74, 0], [74, 76, 74, 71, 0, 67, 0, 0],
+    ];
+    for (let c = 0; c < compassos; c++) {
+      const t0 = c * 4 * batida;
+      const i = c % 4;
+      const parte = Math.floor(c / 4); // 0: entrada, 1-3: completa
+      for (let b = 0; b < 4; b++) {
+        const t = t0 + b * batida;
+        bumbo(t);
+        if (b === 1 || b === 3) barulho(t, 0.18, 0.35, 'bandpass', 1800);
+        barulho(t + batida / 2, 0.05, 0.12, 'highpass', 7000);
+        barulho(t, 0.04, 0.06, 'highpass', 9000);
+        // baixo saltitante
+        const raiz = baixos[i];
+        tom(t, f(raiz), batida * 0.45, 'triangle', 0.45, 900);
+        tom(t + batida / 2, f(raiz + 12), batida * 0.35, 'triangle', 0.3, 900);
+        // acordes no contratempo
+        if (parte > 0) for (const n of acordes[i]) tom(t + batida / 2, f(n), batida * 0.3, 'sawtooth', 0.045, 2200);
+      }
+      // melodia (a partir da 2ª parte)
+      if (parte > 0) {
+        const mel = melodia[(c - 4 + 8) % 8];
+        mel.forEach((n, k) => { if (n) tom(t0 + k * batida / 2, f(n), batida * 0.42, 'square', 0.05, 2600); });
+      }
+      // virada de bateria no fim de cada parte
+      if (i === 3) for (let k = 0; k < 4; k++) barulho(t0 + 3 * batida + k * batida / 4, 0.08, 0.25, 'bandpass', 1500 + k * 300);
+    }
+    return oc.startRendering();
+  }
+
+  async function ligar() {
+    const c = contexto();
+    if (!c) return;
+    if (c.state !== 'running') { try { await c.resume(); } catch { /* */ } }
+    if (!buffer) { if (!gerando) gerando = gerar(); buffer = await gerando; }
+    if (!ligada || fonte) return;
+    ganho = c.createGain();
+    ganho.gain.value = volume;
+    ganho.connect(c.destination);
+    fonte = c.createBufferSource();
+    fonte.buffer = buffer;
+    fonte.loop = true;
+    fonte.connect(ganho);
+    fonte.start();
+  }
+
+  function desligar() {
+    if (fonte) { try { fonte.stop(); } catch { /* */ } fonte.disconnect(); fonte = null; }
+  }
+
+  return {
+    configurar(opc) {
+      volume = Number(opc.volumeMusica ?? 0.3);
+      if (ganho && ctx) ganho.gain.setTargetAtTime(volume, ctx.currentTime, 0.1);
+      const quer = !!opc.musica;
+      if (quer && !ligada) { ligada = true; ligar(); }
+      else if (!quer && ligada) { ligada = false; desligar(); }
+    },
+    tentarDeNovo() { if (ligada && !fonte) ligar(); },
+    tocando() { return !!fonte; },
+    gerarPrevia: () => gerar(),
+    // abaixa a música enquanto a voz fala
+    abaixar(sim) { if (ganho && ctx) ganho.gain.setTargetAtTime(sim ? volume * 0.25 : volume, ctx.currentTime, 0.15); },
+  };
+})();
+
+// ---------------- Voz do apresentador ----------------
+// No aplicativo usa a voz do próprio celular (Android). No PC usa a voz do navegador.
+window.Voz = (() => {
+  let ligada = true;
+  let vozPT = null;
+  function escolherVoz() {
+    if (!window.speechSynthesis) return;
+    const vs = speechSynthesis.getVoices();
+    vozPT = vs.find((v) => /pt[-_]BR/i.test(v.lang) && /google|natural|online/i.test(v.name)) || vs.find((v) => /pt[-_]BR/i.test(v.lang)) || vs.find((v) => /^pt/i.test(v.lang)) || null;
+  }
+  if (window.speechSynthesis) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
+
+  async function falar(texto) {
+    if (!ligada || !texto) return;
+    Musica.abaixar(true);
+    try {
+      if (window.__falarNativo) {
+        await window.__falarNativo(texto);
+      } else if (window.speechSynthesis) {
+        await new Promise((ok) => {
+          speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(texto);
+          u.lang = 'pt-BR';
+          if (vozPT) u.voice = vozPT;
+          u.rate = 1.05;
+          u.onend = ok; u.onerror = ok;
+          speechSynthesis.speak(u);
+          setTimeout(ok, 9000);
+        });
+      }
+    } catch { /* sem voz disponível */ }
+    Musica.abaixar(false);
+  }
+  return { falar, configurar(opc) { ligada = opc.voz !== false; } };
+})();
