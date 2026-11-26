@@ -3,6 +3,8 @@
 // "não verificada" (modo auto) ou "pendente" (modo dicionário) e você decide no painel.
 // Palavras aprovadas com o botão 📖 do painel ficam guardadas no "dicionário extra".
 
+import { NOMES_IBGE } from './nomes-ibge.js';
+
 const L = (s) => s.split('|').map((x) => x.trim()).filter(Boolean);
 
 const BASE = {
@@ -39,6 +41,8 @@ function montar() {
   for (const id of ids) {
     conjuntos[id] = new Set([...(BASE[id] || []), ...(extra[id] || [])].map(normalizar));
   }
+  // nomes de pessoas: lista do IBGE (milhares de nomes registrados no Brasil)
+  for (const n of NOMES_IBGE.split('|')) conjuntos.nome.add(n);
 }
 montar();
 
@@ -54,7 +58,24 @@ export function estaNoDicionario(catId, palavra) {
   if (set.has(n)) return true;
   // tolera plural simples (macacos -> macaco)
   if (n.endsWith('s') && set.has(n.slice(0, -1))) return true;
+  // nome composto (Maria Clara, Ana Júlia, João de Deus): todas as partes precisam ser nomes
+  if (catId === 'nome' && n.includes(' ')) {
+    const partes = n.split(' ').filter((p) => !['de', 'da', 'do', 'dos', 'das', 'e'].includes(p));
+    return partes.length > 0 && partes.every((p) => set.has(p));
+  }
   return false;
+}
+
+// confere se parece uma palavra de verdade (barra coisas como "Mdkdkdkd", "asdfgh")
+export function pareceePalavra(palavra) {
+  const n = normalizar(palavra).replace(/\s+/g, ' ');
+  const letras = n.replace(/[^a-z]/g, '');
+  if (letras.length < 2) return false;
+  if (!/[aeiouy]/.test(letras)) return false;
+  if (/[^aeiouy\s]{4,}/.test(n.replace(/[^a-z\s]/g, ''))) return false; // 4 consoantes seguidas
+  if (/([a-z]{2})\1\1/.test(letras)) return false; // repetição tipo "dkdkdk"
+  const vogais = (letras.match(/[aeiouy]/g) || []).length;
+  return vogais / letras.length >= 0.2;
 }
 
 export function temDicionario(catId) {

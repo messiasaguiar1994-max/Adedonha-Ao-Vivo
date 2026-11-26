@@ -1,7 +1,7 @@
 // Motor da Adedonha: fases da rodada, respostas, pontuação, modos, presentes e comandos.
 import { Emissor } from './emissor.js';
 import { interpretarMensagem, lerComando } from './parser.js';
-import { normalizar, estaNoDicionario, temDicionario } from './dicionario.js';
+import { normalizar, estaNoDicionario, temDicionario, pareceePalavra } from './dicionario.js';
 
 const sortear = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const embaralhar = (arr) => {
@@ -338,7 +338,7 @@ export class Jogo extends Emissor {
     else if (norm[0] !== normalizar(this.letra)) { r.status = 'invalida'; r.motivo = `não começa com ${this.letra}`; }
     else if (semEspaco.length < v.tamanhoMinimo) { r.status = 'invalida'; r.motivo = 'muito curta'; }
     else if (proibidas.some((p) => norm === p || norm.includes(p))) { r.status = 'invalida'; r.motivo = 'palavra proibida'; }
-    else if (/(.)\1\1\1/.test(semEspaco)) { r.status = 'invalida'; r.motivo = 'parece spam'; }
+    else if (/(.)\1\1\1/.test(semEspaco) || !pareceePalavra(palavra)) { r.status = 'invalida'; r.motivo = 'não parece palavra'; }
     else if (estaNoDicionario(cat.id, palavra)) { r.verificada = true; }
     else if (v.modo === 'dicionario' && temDicionario(cat.id) && !this.cfg.categorias.find((c) => c.id === cat.id)?.livre) { r.status = 'pendente'; r.motivo = 'não reconhecida (aprove no painel)'; }
     else { r.motivo = temDicionario(cat.id) ? 'não está no dicionário' : ''; }

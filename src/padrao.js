@@ -29,12 +29,12 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 4,
+  versaoConfig: 5,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
   categorias: [
-    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: true, livre: true },
+    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: true },
     { id: 'animal', nome: 'Animal', apelidos: ['animal', 'animais', 'bicho'], ativa: true },
     { id: 'cidade', nome: 'Cidade', apelidos: ['cidade', 'cid', 'cep'], ativa: true },
     { id: 'pais', nome: 'País', apelidos: ['pais', 'país', 'paises'], ativa: true },
@@ -134,6 +134,11 @@ export function migrar(cfg) {
     cfg.versaoConfig = 4;
     // nomes, filmes e celebridades são infinitos: aceita qualquer palavra com a letra
     for (const c of cfg.categorias || []) if (['nome', 'filme', 'celebridade'].includes(c.id)) c.livre = true;
+  }
+  if (cfg.versaoConfig < 5) {
+    cfg.versaoConfig = 5;
+    // nomes agora conferem na lista do IBGE
+    for (const c of cfg.categorias || []) if (c.id === 'nome') c.livre = false;
   }
   return cfg;
 }
