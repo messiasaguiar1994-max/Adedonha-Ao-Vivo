@@ -1,0 +1,6 @@
+{
+  "appId": "com.adedonha.aovivo",
+  "appName": "Adedonha Ao Vivo",
+  "webDir": "dist",
+  "android": { "allowMixedContent": true }
+}

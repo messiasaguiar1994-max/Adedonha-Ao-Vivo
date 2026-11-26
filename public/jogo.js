@@ -1,0 +1,324 @@
+// Tela do jogo (a que aparece na live)
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  if (params.get('transparente') === '1') document.body.classList.add('transparente');
+
+  // ---------- encaixa o palco 1080x1920 em qualquer janela ----------
+  const palco = $('#palco');
+  function ajustar() {
+    const s = Math.min(innerWidth / 1080, innerHeight / 1920);
+    palco.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  addEventListener('resize', ajustar);
+  ajustar();
+
+  // ---------- logo e fundo animado ----------
+  const cores = ['#ffd23f', '#ff3d9a', '#2ee6ff', '#3ddc84', '#ff9f1c', '#ffffff', '#ffd23f', '#ff3d9a'];
+  $('#logo').innerHTML = 'ADEDONHA'.split('').map((l, i) => `<span style="color:${cores[i]};animation-delay:${i * 0.12}s">${l}</span>`).join('');
+  const voando = $('#letrasVoando');
+  const ABC = 'ABCDEFGHIJLMNOPRSTUVZ';
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    s.textContent = ABC[Math.floor(Math.random() * ABC.length)];
+    s.style.left = `${Math.random() * 100}%`;
+    s.style.fontSize = `${80 + Math.random() * 180}px`;
+    s.style.animationDuration = `${14 + Math.random() * 18}s`;
+    s.style.animationDelay = `${-Math.random() * 30}s`;
+    voando.appendChild(s);
+  }
+
+  // ---------- utilidades ----------
+  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let efeitos = { sons: true, volume: 0.6, animacoes: true, confete: true, fotoPerfil: true };
+  function avatar(nome, foto, cls = '') {
+    const ini = esc(String(nome || '?').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1).toUpperCase() || '?');
+    if (foto && efeitos.fotoPerfil) return `<span class="av ${cls}"><img src="${esc(foto)}" referrerpolicy="no-referrer" onerror="this.parentNode.textContent='${ini}'"></span>`;
+    return `<span class="av ${cls}">${ini}</span>`;
+  }
+  function telaAtiva(id) {
+    document.querySelectorAll('.tela').forEach((t) => t.classList.toggle('ativa', t.id === id));
+  }
+  function aplicarEfeitos(e) {
+    efeitos = { ...efeitos, ...e };
+    Sons.configurar(efeitos);
+    document.body.classList.toggle('semAnimacao', !efeitos.animacoes);
+  }
+
+  // ---------- som ----------
+  const botaoSom = $('#ativarSom');
+  botaoSom.onclick = () => { Sons.desbloquear(); botaoSom.style.display = 'none'; };
+  document.addEventListener('click', () => Sons.desbloquear());
+  setTimeout(() => { Sons.desbloquear(); if (efeitos.sons && Sons.bloqueado() && !navigator.userAgent.includes('OBS')) botaoSom.style.display = 'block'; }, 1500);
+
+  // ---------- conexão ----------
+  const socket = io({ query: { papel: 'tela' } });
+  let E = null; // último estado
+  let recebidoEm = 0;
+  socket.on('connect', () => { $('#semConexao').style.display = 'none'; });
+  socket.on('disconnect', () => { $('#semConexao').style.display = 'block'; });
+  socket.on('efeitos', aplicarEfeitos);
+  socket.on('estado', (e) => {
+    const anterior = E;
+    E = e;
+    recebidoEm = performance.now();
+    if (e.efeitos) aplicarEfeitos(e.efeitos);
+    desenhar(anterior);
+  });
+  socket.on('evento', tratarEvento);
+
+  // ---------- desenho ----------
+  let girando = false;
+  let assinaturaCats = '';
+  const totaisAntes = {};
+  const feedVisto = new Set();
+
+  function textoModo(e) {
+    const m = { competitivo: '', sobrevivencia: '☠ SOBREVIVÊNCIA', relampago: '⚡ RELÂMPAGO', presente: '', desafio: '🎯 DESAFIO' }[e.modo] || '';
+    return e.relampago && e.modo !== 'relampago' ? '⚡ RELÂMPAGO' : m;
+  }
+
+  function desenhar(anterior) {
+    const e = E;
+    document.body.className = document.body.className.replace(/\bfase-\S+/g, '').trim() + ` fase-${e.mostrarRanking ? 'ranking' : e.fase}`;
+    $('#txtRodada').textContent = e.rodada ? `RODADA ${e.rodada}` : 'PREPARANDO';
+    $('#txtModo').textContent = textoModo(e);
+
+    // letra
+    const elLetra = $('#letra');
+    if (e.fase === 'sorteio') { if (!girando) comecarGiro(); }
+    else {
+      if (girando) pararGiro(e.letra);
+      else if (e.letra && elLetra.textContent !== e.letra && ['jogando', 'pausado'].includes(e.fase)) { elLetra.textContent = e.letra; pulsar(elLetra, 'pousou'); }
+      else if (!e.letra) elLetra.textContent = '?';
+      else if (['resultado', 'ranking', 'fim'].includes(e.fase)) elLetra.textContent = e.letra;
+    }
+
+    // faixas
+    const fx = [];
+    if (e.desafio) fx.push(`<div class="faixa desafio">🎯 ${esc(e.desafio.nome)} <small>${esc(e.desafio.descricao)}</small></div>`);
+    if (e.multiplicador > 1) fx.push(`<div class="faixa mult">✖${e.multiplicador} PONTOS</div>`);
+    if (e.relampago && ['sorteio', 'jogando', 'pausado'].includes(e.fase)) fx.push('<div class="faixa relampago">⚡ RODADA RELÂMPAGO</div>');
+    if (e.modo === 'sobrevivencia' && e.rodada > 0) fx.push(`<div class="faixa vivos">❤️ ${e.vivos} na disputa</div>`);
+    if (['jogando', 'pausado'].includes(e.fase) && e.jogadoresRodada) fx.push(`<div class="faixa vivos">👥 ${e.jogadoresRodada} jogando</div>`);
+    const htmlFx = fx.join('');
+    if ($('#faixas').dataset.h !== htmlFx) { $('#faixas').innerHTML = htmlFx; $('#faixas').dataset.h = htmlFx; }
+
+    // telas
+    if (e.mostrarRanking) { telaAtiva('telaRanking'); desenharRanking(e); }
+    else if (e.fase === 'espera') { telaAtiva('telaEspera'); desenharEspera(e); }
+    else if (['sorteio', 'jogando', 'pausado'].includes(e.fase)) { telaAtiva('telaJogo'); desenharCategorias(e); desenharFeed(e); }
+    else if (e.fase === 'resultado') { telaAtiva('telaResultado'); if (!anterior || anterior.fase !== 'resultado' || JSON.stringify(anterior.resultado) !== JSON.stringify(e.resultado)) desenharResultado(e); }
+    else if (e.fase === 'ranking') { telaAtiva('telaRanking'); if (!anterior || anterior.fase !== 'ranking') desenharRanking(e); }
+    else if (e.fase === 'fim') { telaAtiva('telaFim'); desenharCampeao(e); }
+
+    desenharMiniRanking(e);
+  }
+
+  function desenharCategorias(e) {
+    const n = e.categorias.length;
+    const lista = $('#listaCategorias');
+    const altura = Math.max(64, Math.min(116, Math.floor((620 - (n - 1) * 14) / Math.max(1, n))));
+    lista.style.setProperty('--alturaCat', `${altura}px`);
+    const assin = e.categorias.map((c) => `${c.id}|${c.eliminada}|${c.ouro}`).join(',') + e.rodada;
+    if (assin !== assinaturaCats) {
+      assinaturaCats = assin;
+      lista.innerHTML = e.categorias.map((c) => `
+        <div class="cat ${c.eliminada ? 'eliminada' : ''} ${c.ouro ? 'ouro' : ''}" data-id="${esc(c.id)}">
+          <div class="numCat">${c.num}</div>
+          <div class="nomeCat">${c.ouro ? '⭐ ' : ''}${esc(c.nome)}</div>
+          <div class="ultimas"></div>
+          <div class="totalCat">0</div>
+        </div>`).join('');
+      for (const k of Object.keys(totaisAntes)) delete totaisAntes[k];
+    }
+    for (const c of e.categorias) {
+      const el = lista.querySelector(`.cat[data-id="${CSS.escape(c.id)}"]`);
+      if (!el) continue;
+      el.querySelector('.totalCat').textContent = c.total;
+      const html = c.ultimas.slice(0, 2).map((u) => `<span class="chip">${avatar(u.nome, u.foto)}${esc(u.palavra)}</span>`).join('');
+      const ult = el.querySelector('.ultimas');
+      if (ult.dataset.h !== html) { ult.innerHTML = html; ult.dataset.h = html; }
+      if ((totaisAntes[c.id] || 0) < c.total) pulsar(el, 'pisca');
+      totaisAntes[c.id] = c.total;
+    }
+  }
+
+  function desenharFeed(e) {
+    const feed = $('#feed');
+    const novos = [...e.feed].reverse().filter((f) => !feedVisto.has(f.t + f.nome));
+    for (const f of novos) {
+      feedVisto.add(f.t + f.nome);
+      const div = document.createElement('div');
+      div.className = 'itemFeed';
+      const resps = (f.itens || []).map((i) => `<span class="${i.status === 'invalida' ? 'ruim' : i.status === 'pendente' ? 'pend' : 'ok'}">${esc(i.palavra)}</span>`).join(' · ');
+      div.innerHTML = `${avatar(f.nome, f.foto)}<div class="resps"><b>${esc(f.nome)}</b> ${resps}</div>`;
+      feed.prepend(div);
+    }
+    while (feed.children.length > 5) feed.lastChild.remove();
+    if (e.fase === 'sorteio' && feed.children.length && !e.feed.length) feed.innerHTML = '';
+  }
+
+  function desenharResultado(e) {
+    const r = e.resultado;
+    if (!r) return;
+    const medalhas = ['🥇', '🥈', '🥉'];
+    const top = r.topRodada.filter((t) => t.pts > 0).slice(0, 3);
+    const ordem = top.length === 3 ? [top[1], top[0], top[2]] : top;
+    $('#podioRodada').innerHTML = ordem.length
+      ? ordem.map((t, i) => {
+        const pos = top.indexOf(t);
+        return `<div class="pod ${pos === 0 ? 'p1' : ''}" style="animation-delay:${i * 0.15}s">${avatar(t.nome, t.foto)}<div class="nome">${medalhas[pos]} ${esc(t.nome)}</div><div class="pts">+${t.pts}</div></div>`;
+      }).join('')
+      : '<div class="vazio">Ninguém pontuou nesta rodada 😅</div>';
+    const nCat = Math.max(1, r.categorias.length);
+    const alturaChips = Math.max(42, Math.floor((560 - nCat * 70) / nCat / 46) * 46 - 4);
+    $('#resultadoCategorias').style.setProperty('--alturaChips', `${alturaChips}px`);
+    const maxChips = Math.max(5, Math.floor(30 / nCat));
+    $('#resultadoCategorias').innerHTML = r.categorias.map((c, i) => {
+      const ord = [...c.respostas].sort((a, b) => b.pontos - a.pontos);
+      const chips = ord.slice(0, maxChips).map((x) => {
+        const cls = x.status === 'invalida' ? 'invalida' : x.status === 'pendente' ? 'pendente' : x.unica ? 'unica' : 'repetida';
+        return `<span class="rchip ${cls}">${esc(x.palavra)} <small>${x.status === 'invalida' ? '✖' : '+' + x.pontos}</small></span>`;
+      }).join('');
+      const mais = ord.length > maxChips ? `<span class="rchip">+${ord.length - maxChips}</span>` : '';
+      return `<div class="resCat" style="animation-delay:${0.3 + i * 0.1}s"><h3>${c.ouro ? '⭐ ' : ''}${esc(c.nome)}</h3><div class="chips">${chips || '<span class="vazio">sem respostas</span>'}${mais}</div></div>`;
+    }).join('');
+  }
+
+  function desenharRanking(e) {
+    const html = e.ranking.length
+      ? e.ranking.map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.eliminado ? 'elim' : ''}" style="animation-delay:${i * 0.07}s">
+          <div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div>
+          ${e.modo === 'sobrevivencia' ? `<div class="vidas">${j.eliminado ? '☠️' : '❤️'.repeat(Math.max(0, Math.min(5, j.vidas)))}</div>` : ''}
+          <div class="pts">${j.pontos}</div></div>`).join('')
+      : '<div class="cartaoGrande"><div class="textoMedio">Placar zerado</div></div>';
+    const el = $('#listaRanking');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  }
+
+  function desenharCampeao(e) {
+    const v = e.vencedor;
+    if (!v) return;
+    const html = `${avatar(v.nome, v.foto)}<div class="nome">${esc(v.nome)}</div><div class="pts">${v.pontos} pontos</div>`;
+    if ($('#campeao').dataset.h !== html) { $('#campeao').innerHTML = html; $('#campeao').dataset.h = html; }
+  }
+
+  function desenharMiniRanking(e) {
+    const med = ['🥇', '🥈', '🥉'];
+    const html = e.ranking.slice(0, 3).map((j, i) => `<div class="mini"><span class="med">${med[i]}</span>${avatar(j.nome, j.foto)}<span class="n">${esc(j.nome)}</span><span class="p">${j.pontos}</span></div>`).join('');
+    const el = $('#miniRanking');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  }
+
+  function desenharEspera(e) {
+    const html = e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('');
+    const el = $('#rankingEspera');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  }
+
+  function pulsar(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  // ---------- roleta da letra ----------
+  let giroTimer = null;
+  function comecarGiro() {
+    girando = true;
+    const el = $('#letra');
+    el.classList.add('girando');
+    clearInterval(giroTimer);
+    giroTimer = setInterval(() => { el.textContent = ABC[Math.floor(Math.random() * ABC.length)]; Sons.tocar('giro'); }, 90);
+  }
+  function pararGiro(letra) {
+    girando = false;
+    clearInterval(giroTimer);
+    const el = $('#letra');
+    el.classList.remove('girando');
+    el.textContent = letra || '?';
+    pulsar(el, 'pousou');
+    Sons.tocar('pousar');
+  }
+
+  // ---------- cronômetro (atualiza suave) ----------
+  let ultimoSegundo = null;
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!E) return;
+    const rel = $('#relogio');
+    let rest = E.restanteMs;
+    if (E.fase === 'jogando') rest = Math.max(0, E.restanteMs - (performance.now() - recebidoEm));
+    const ativo = ['jogando', 'pausado', 'sorteio'].includes(E.fase);
+    const seg = ativo ? Math.ceil(rest / 1000) : null;
+    $('#segundos').textContent = ativo ? (E.fase === 'pausado' ? '⏸' : seg) : (E.fase === 'resultado' || E.fase === 'ranking' ? 'STOP' : '--');
+    $('#segundos').style.fontSize = ativo && E.fase !== 'pausado' ? '' : '84px';
+    const frac = ativo && E.tempoTotal ? Math.max(0, Math.min(1, rest / E.tempoTotal)) : 0;
+    $('#arco').style.strokeDashoffset = String(553 * (1 - frac));
+    rel.classList.toggle('urgente', E.fase === 'jogando' && seg <= 10);
+    rel.classList.toggle('pausado', E.fase === 'pausado');
+    rel.classList.toggle('parado', !ativo || E.fase === 'pausado');
+    if (E.fase === 'jogando' && seg !== ultimoSegundo) {
+      if (seg <= 5 && seg > 0) Sons.tocar('tiqueUrgente');
+      else if (seg <= 10 && seg > 0) Sons.tocar('tique');
+    }
+    ultimoSegundo = seg;
+  }
+  requestAnimationFrame(loop);
+
+  // ---------- alertas ----------
+  function alerta(html, cor = 'amarelo', ms = 2600, extra = '') {
+    const d = document.createElement('div');
+    d.className = `alerta ${cor} ${extra}`;
+    d.innerHTML = html;
+    $('#alertas').appendChild(d);
+    setTimeout(() => d.remove(), ms);
+    while ($('#alertas').children.length > 3) $('#alertas').firstChild.remove();
+  }
+
+  function tratarEvento(ev) {
+    switch (ev.tipo) {
+      case 'valendo': alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
+      case 'resposta': Sons.tocar('resposta'); break;
+      case 'stop': alerta('STOP!', 'vermelho', 2200, 'gigante'); Sons.tocar('stop'); break;
+      case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
+      case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } break;
+      case 'categoria_eliminada': alerta(`💥 SAIU: ${esc(ev.cat)}`, 'vermelho'); Sons.tocar('ruim'); break;
+      case 'desafio': alerta(`🎯 ${esc(ev.desafio.nome)}<small>${esc(ev.desafio.descricao)}${ev.catOuro ? ' — ' + esc(ev.catOuro) : ''}</small>`, 'rosa', 3400); Sons.tocar('alerta'); break;
+      case 'multiplicador': alerta(`✖${ev.valor} PONTOS!`, 'amarelo'); Sons.tocar('alerta'); confete(80); break;
+      case 'agendado': alerta(esc(ev.texto), 'ciano', 2600); break;
+      // presentes: a tela NÃO mostra quem mandou nem agradece (evita associar presente a recompensa).
+      // Só o efeito do jogo aparece (ex.: +5 segundos), como um acontecimento normal da rodada.
+      case 'eliminados': alerta(`☠️ ELIMINADOS<small>${ev.nomes.slice(0, 6).map(esc).join(', ')}${ev.nomes.length > 6 ? '...' : ''}</small>`, 'vermelho', 3400); Sons.tocar('ruim'); break;
+      case 'campeao': Sons.tocar('campeao'); confete(250); break;
+      case 'pausa': alerta('⏸ PAUSA', 'ciano', 1600); break;
+      case 'continuar': alerta('▶ CONTINUANDO!', 'verde', 1400); break;
+      case 'reiniciado': alerta('🔁 NOVA PARTIDA!', 'amarelo'); feedVisto.clear(); $('#feed').innerHTML = ''; break;
+      case 'aviso': alerta(esc(ev.texto), 'vermelho'); break;
+      default: break;
+    }
+  }
+
+  // ---------- confete ----------
+  const cv = $('#confete');
+  const cx = cv.getContext('2d');
+  let pedacos = [];
+  function confete(qtd) {
+    if (!efeitos.confete) return;
+    for (let i = 0; i < qtd; i++) {
+      pedacos.push({ x: 540 + (Math.random() - 0.5) * 300, y: 900, vx: (Math.random() - 0.5) * 28, vy: -Math.random() * 30 - 10, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4, c: cores[i % cores.length], w: 14 + Math.random() * 14, h: 8 + Math.random() * 10, vida: 160 });
+    }
+  }
+  (function anima() {
+    requestAnimationFrame(anima);
+    if (!pedacos.length) return;
+    cx.clearRect(0, 0, 1080, 1920);
+    for (const p of pedacos) {
+      p.vy += 0.7; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vida--;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+    }
+    pedacos = pedacos.filter((p) => p.vida > 0 && p.y < 2000);
+    if (!pedacos.length) cx.clearRect(0, 0, 1080, 1920);
+  })();
+})();

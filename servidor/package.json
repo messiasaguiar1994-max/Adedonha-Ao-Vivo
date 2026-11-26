@@ -1,0 +1,14 @@
+{
+  "name": "adedonha-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servidor da Adedonha Ao Vivo: lê a live do TikTok e repassa chat e presentes para o aplicativo",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "tiktok-live-connector": "2.5.0",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+servidor/node_modules/
+dist/
+data/*.json

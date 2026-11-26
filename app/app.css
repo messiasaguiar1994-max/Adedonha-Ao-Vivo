@@ -1,0 +1,25 @@
+/* Tela inicial e painel do aplicativo */
+#menuApp { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: auto;
+  background: radial-gradient(circle at 30% 15%, #5b21c9, #1a0840 70%); font-family: 'Baloo 2', 'Segoe UI', Arial, sans-serif; color: #fff; }
+#menuApp.escondido { display: none; }
+.mCaixa { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
+.mLogo { font-family: 'Luckiest Guy', 'Arial Black', sans-serif; font-size: 52px; text-align: center; color: #ffd23f; text-shadow: 0 5px 0 rgba(0,0,0,.35); line-height: 1; }
+.mSub { text-align: center; margin-top: -10px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; color: #ff3d9a; }
+#menuApp label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; }
+#menuApp input { font-size: 18px; padding: 12px 14px; border-radius: 12px; border: 2px solid #6b4bd1; background: #12062d; color: #fff; }
+.mBt { font-size: 18px; font-weight: 800; padding: 14px; border-radius: 14px; border: 0; color: #fff; background: #3a2a6e; }
+.mBt.verde { background: #1f9d55; font-size: 20px; padding: 16px; }
+.mBt.fraco { background: transparent; border: 2px solid #4b3a86; font-size: 15px; padding: 10px; }
+.mStatus { text-align: center; padding: 10px; border-radius: 12px; background: rgba(0,0,0,.35); font-size: 14px; }
+.mStatus.conectado { background: #1f6b3e; } .mStatus.erro { background: #7a2130; } .mStatus.conectando { background: #7a5500; }
+.mDica { font-size: 13px; opacity: .8; text-align: center; margin: 0; }
+#menuApp details { font-size: 14px; opacity: .85; }
+#menuApp summary { cursor: pointer; margin-bottom: 8px; }
+#painelApp { position: fixed; inset: 0; z-index: 1100; display: none; background: #14101f; }
+#painelApp.aberto { display: block; }
+#painelApp iframe { width: 100%; height: 100%; border: 0; }
+
+/* no celular: fundo do jogo preenche a tela toda e nada de botão sobre a tela da live */
+html, body { background: radial-gradient(circle at 30% 10%, #5b21c9 0%, #2a0b5e 45%, #12052e 100%) !important; }
+#ativarSom { display: none !important; }
+#palco { background: transparent !important; }

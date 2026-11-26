@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Adedonha Ao Vivo</string>
+    <string name="title_activity_main">Adedonha Ao Vivo</string>
+    <string name="package_name">com.adedonha.aovivo</string>
+    <string name="custom_url_scheme">com.adedonha.aovivo</string>
+</resources>

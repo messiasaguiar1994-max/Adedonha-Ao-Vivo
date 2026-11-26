@@ -1,0 +1,16 @@
+# Servidor da Adedonha Ao Vivo no Render (plano grátis).
+# Ele só lê a live (comentários e presentes) e manda para o aplicativo.
+services:
+  - type: web
+    name: adedonha-ao-vivo
+    runtime: node
+    plan: free
+    buildCommand: cd servidor && npm install
+    startCommand: node servidor/server.js
+    healthCheckPath: /status
+    buildFilter:
+      paths:
+        - servidor/**
+    envVars:
+      - key: EULER_API_KEY
+        sync: false

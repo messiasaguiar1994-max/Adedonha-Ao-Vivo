@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel — Adedonha Ao Vivo</title>
+<link rel="stylesheet" href="/painel.css">
+</head>
+<body>
+<header class="barra">
+  <span class="soApp"><button class="verde" id="btFecharPainel">⬅ Voltar ao jogo</button> <button id="btInicioApp">🏠 Início</button></span>
+  <div class="marca">🔤 Adedonha <b>Ao Vivo</b> — Painel</div>
+  <div id="statusTopo">
+    <span id="stFase" class="pill">—</span>
+    <span id="stLetra" class="pill">Letra: —</span>
+    <span id="stTempo" class="pill">⏱ —</span>
+    <span id="stTikTok" class="pill">TikTok: —</span>
+  </div>
+</header>
+
+<nav class="abas">
+  <button data-aba="controle" class="ativa">🎮 Controle</button>
+  <button data-aba="jogadores">👥 Jogadores</button>
+  <button data-aba="categorias">📋 Categorias</button>
+  <button data-aba="regras">🏆 Pontos e modos</button>
+  <button data-aba="presentes">🎁 Presentes</button>
+  <button data-aba="conexao">🔌 Conexão</button>
+  <button data-aba="testar">🧪 Testar</button>
+  <button data-aba="efeitos">✨ Tela e efeitos</button>
+</nav>
+
+<main>
+<!-- ================= CONTROLE ================= -->
+<section id="aba-controle" class="aba ativa">
+  <div class="grade2">
+    <div>
+      <div class="card">
+        <h2>Controle da partida</h2>
+        <div class="botoes grandes">
+          <button class="verde" data-acao="iniciar">▶ Iniciar / próxima rodada</button>
+          <button class="vermelho" data-acao="encerrar">✋ STOP (encerrar rodada)</button>
+          <button id="btPausa" class="amarelo" data-acao="pausar">⏸ Pausar</button>
+        </div>
+        <div class="botoes">
+          <button data-acao="letra">🔄 Sortear outra letra</button>
+          <button data-acao="ranking">🏆 Mostrar ranking</button>
+          <button data-acao="mais_tempo" data-segundos="10">⏱ +10 segundos</button>
+          <button data-acao="eliminar_categoria">💥 Eliminar categoria</button>
+          <button data-acao="desafio">🎯 Ativar desafio</button>
+          <button data-acao="multiplicador" data-valor="2">✖2 pontos (rodada)</button>
+          <button data-acao="proxima_relampago">⚡ Próxima = relâmpago</button>
+          <button class="perigo" id="btReiniciar">🔁 Reiniciar partida (zera placar)</button>
+        </div>
+        <div class="linhaCampos">
+          <label>Modo de jogo
+            <select data-cfg="modo">
+              <option value="competitivo">🏆 Competitivo</option>
+              <option value="sobrevivencia">☠️ Sobrevivência</option>
+              <option value="relampago">⚡ Relâmpago</option>
+              <option value="presente">🎁 Presente</option>
+              <option value="desafio">🎯 Desafio</option>
+            </select>
+          </label>
+          <label>Tempo da rodada (s) <input type="number" min="10" max="600" data-cfg="tempoRodada"></label>
+          <label>Categorias por rodada <input type="number" min="1" max="10" data-cfg="categoriasPorRodada"></label>
+          <label class="chk"><input type="checkbox" data-cfg="rodadaAutomatica"> Próxima rodada começa sozinha</label>
+        </div>
+        <p class="dica" id="dicaModo"></p>
+      </div>
+
+      <div class="card">
+        <h2>Respostas da rodada <small id="contResp"></small></h2>
+        <p class="dica">✔ aprova, ✖ recusa, 📖 aprova e salva no dicionário. Se você mudar algo depois do STOP, os pontos são recalculados na hora.</p>
+        <div class="filtros">
+          <label class="chk"><input type="checkbox" id="soDuvidosas"> Mostrar só as que precisam de olho (não verificadas / pendentes)</label>
+        </div>
+        <div class="tabelaRolagem"><table id="tabRespostas"><thead><tr><th>Jogador</th><th>Categoria</th><th>Resposta</th><th>Situação</th><th>Pts</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card soPC">
+        <h2>Prévia da tela da live</h2>
+        <div class="previa"><iframe id="previa" title="prévia"></iframe></div>
+        <p class="dica">Endereço para o OBS / TikTok LIVE Studio: <code id="urlJogo"></code></p>
+      </div>
+      <div class="card">
+        <h2>Mensagens recusadas <small>(fora do tempo, repetidas…)</small></h2>
+        <div class="tabelaRolagem baixa"><table id="tabRejeitadas"><tbody></tbody></table></div>
+      </div>
+      <div class="card">
+        <h2>Chat ao vivo</h2>
+        <div id="chatBruto" class="tabelaRolagem baixa"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= JOGADORES ================= -->
+<section id="aba-jogadores" class="aba">
+  <div class="card">
+    <h2>Participantes <small id="contJog"></small></h2>
+    <div class="tabelaRolagem alta"><table id="tabJogadores"><thead><tr><th>#</th><th>Jogador</th><th>Pontos</th><th>Últ. rodada</th><th>Acertos</th><th>Vidas</th><th>Situação</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ================= CATEGORIAS ================= -->
+<section id="aba-categorias" class="aba">
+  <div class="card">
+    <h2>Categorias</h2>
+    <p class="dica">Marque as que podem sair. A cada rodada o jogo sorteia algumas delas. "Apelidos" são outras formas que o chat pode escrever (ex.: <code>bicho: macaco</code>).</p>
+    <div class="tabelaRolagem alta"><table id="tabCategorias"><thead><tr><th>Ativa</th><th>Nome na tela</th><th>Apelidos (separe por vírgula)</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="botoes"><button id="btNovaCat" class="verde">+ Adicionar categoria</button></div>
+    <div class="linhaCampos">
+      <label>Letras que podem ser sorteadas <input type="text" data-cfg="letras" style="width:320px"></label>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REGRAS ================= -->
+<section id="aba-regras" class="aba">
+  <div class="grade2">
+    <div class="card">
+      <h2>Pontuação</h2>
+      <div class="campos">
+        <label>Resposta válida <input type="number" data-cfg="pontos.valida"></label>
+        <label>Bônus por resposta única <input type="number" data-cfg="pontos.bonusUnica"></label>
+        <label>Resposta repetida (0 = zera) <input type="number" data-cfg="pontos.repetida"></label>
+        <label>Resposta inválida <input type="number" data-cfg="pontos.invalida"></label>
+        <label>Bônus por completar todas <input type="number" data-cfg="pontos.completou"></label>
+        <label>Bônus do 1º a acertar cada categoria <input type="number" data-cfg="pontos.primeiro"></label>
+      </div>
+      <p class="dica">Exemplo com o padrão: resposta única = 10 + 5 = 15; repetida = 5; errada = 0.</p>
+    </div>
+    <div class="card">
+      <h2>Validação das respostas</h2>
+      <div class="campos">
+        <label>Como validar
+          <select data-cfg="validacao.modo">
+            <option value="auto">Automático: vale tudo que começa com a letra (você pode recusar)</option>
+            <option value="dicionario">Rigoroso: o que não está no dicionário fica pendente até você aprovar</option>
+          </select>
+        </label>
+        <label>Tamanho mínimo da palavra <input type="number" min="1" data-cfg="validacao.tamanhoMinimo"></label>
+        <label>Palavras proibidas (vírgula) <input type="text" data-cfg="validacao.palavrasProibidas" data-tipo="lista"></label>
+      </div>
+      <p class="dica">O jogo sempre confere: letra inicial, tamanho, palavras proibidas, repetição e horário. Ele não tem como saber com 100% de certeza se "Macaco" é animal — por isso existe o dicionário (respostas confirmadas aparecem com ✅) e os botões de aprovar/recusar.</p>
+    </div>
+    <div class="card">
+      <h2>Tempos</h2>
+      <div class="campos">
+        <label>Tempo da rodada (s) <input type="number" data-cfg="tempoRodada"></label>
+        <label>Tempo mostrando o resultado (s) <input type="number" data-cfg="tempoResultado"></label>
+        <label>Tempo mostrando o ranking (s) <input type="number" data-cfg="tempoRanking"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Modos especiais</h2>
+      <h3>☠️ Sobrevivência</h3>
+      <div class="campos">
+        <label>Vidas de cada jogador <input type="number" min="1" data-cfg="sobrevivencia.vidas"></label>
+        <label>Acertos mínimos por rodada para não perder vida <input type="number" min="1" data-cfg="sobrevivencia.minimoAcertos"></label>
+        <label class="chk"><input type="checkbox" data-cfg="sobrevivencia.entradaSoNaPrimeira"> Só entra quem jogou a 1ª rodada</label>
+      </div>
+      <h3>⚡ Relâmpago</h3>
+      <div class="campos">
+        <label>Tempo (s) <input type="number" data-cfg="relampago.tempo"></label>
+        <label>Categorias <input type="number" min="1" data-cfg="relampago.categorias"></label>
+      </div>
+      <h3>🎯 Desafios sorteados</h3>
+      <ul id="listaDesafios" class="dica"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRESENTES ================= -->
+<section id="aba-presentes" class="aba">
+  <div class="card">
+    <h2>Presentes que ativam eventos</h2>
+    <label class="chk"><input type="checkbox" data-cfg="presentes.ativo"> Presentes ativam eventos (no modo 🎁 Presente fica sempre ligado)</label>
+    <p class="dica">Nome do presente igual ao que o TikTok manda (em inglês, ex.: <b>Rose</b>, <b>Finger Heart</b>, <b>Doughnut</b>). Use <b>*</b> para "qualquer presente a partir de X diamantes". Não sabe o nome exato? Veja a lista "Presentes recebidos" abaixo e clique em "criar regra".</p>
+    <div class="aviso">⚠️ A tela do jogo <b>não mostra</b> textos do tipo "mande rosa para ganhar tempo" — isso costuma levar restrição por "solicitação de presentes". O jogo só agradece e mostra o efeito. Se quiser explicar, fale você mesmo na live.</div>
+    <div class="tabelaRolagem alta"><table id="tabRegras"><thead><tr><th>Ativa</th><th>Presente</th><th>Mín. diamantes (só p/ *)</th><th>Ação</th><th>Valor</th><th>Recarga (s)</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="botoes"><button id="btNovaRegra" class="verde">+ Adicionar regra</button></div>
+  </div>
+  <div class="card">
+    <h2>Presentes recebidos</h2>
+    <div class="tabelaRolagem"><table id="tabPresentes"><thead><tr><th>Hora</th><th>Quem</th><th>Presente</th><th>Qtd</th><th>💎</th><th>O que aconteceu</th><th></th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ================= CONEXÃO ================= -->
+<section id="aba-conexao" class="aba">
+  <div class="grade2">
+    <div class="card">
+      <h2>1) Ligar direto na sua live do TikTok <span class="rec">recomendado</span></h2>
+      <div class="campos">
+        <label>Seu @ do TikTok (sem @) <input type="text" data-cfg="tiktok.usuario" placeholder="ex.: meuperfil"></label>
+        <label class="soApp">Endereço do servidor (Render) <input type="text" data-cfg="app.servidor" style="width:320px"></label>
+        <label class="soPC">Chave Euler (opcional) <input type="text" data-cfg="tiktok.chaveEuler" placeholder="só se der erro de limite"></label>
+        <label class="chk soPC"><input type="checkbox" data-cfg="tiktok.conectarAoIniciar"> Conectar sozinho quando abrir o jogo</label>
+      </div>
+      <div class="botoes"><button class="verde" data-acao="conectar_tiktok">🔌 Conectar</button><button data-acao="desconectar_tiktok">Desconectar</button></div>
+      <div id="stConTikTok" class="statusBox">—</div>
+      <p class="dica">A live precisa estar <b>no ar</b> para conectar. Funciona com live feita pelo celular, TikTok LIVE Studio ou OBS. Usa a biblioteca gratuita <i>tiktok-live-connector</i> (não oficial).</p>
+      <p class="dica soApp">No aplicativo, quem lê a live é o servidor no Render. O servidor grátis "dorme" quando fica parado: na primeira conexão pode levar até 1 minuto para acordar.</p>
+    </div>
+    <div class="card soPC">
+      <h2>2) Pelo TikFinity <span class="opc">opcional</span></h2>
+      <div class="campos">
+        <label>Endereço do TikFinity <input type="text" data-cfg="tikfinity.endereco"></label>
+        <label class="chk"><input type="checkbox" data-cfg="tikfinity.ativo"> Conectar sozinho quando abrir o jogo</label>
+      </div>
+      <div class="botoes"><button class="verde" data-acao="conectar_tikfinity">🔌 Conectar TikFinity</button><button data-acao="desconectar_tikfinity">Desconectar</button></div>
+      <div id="stConTikFinity" class="statusBox">—</div>
+      <p class="dica">Use só UM dos dois (TikTok direto <b>ou</b> TikFinity), senão cada mensagem chega duas vezes. O TikFinity precisa estar aberto e conectado na sua live.</p>
+    </div>
+    <div class="card soPC">
+      <h2>3) Webhook (outros programas)</h2>
+      <p class="dica">Qualquer programa que consiga chamar um link pode mandar eventos:</p>
+      <code class="bloco" id="urlWebhookChat"></code>
+      <code class="bloco" id="urlWebhookPresente"></code>
+    </div>
+    <div class="card">
+      <h2>Comandos pelo chat</h2>
+      <label class="chk"><input type="checkbox" data-cfg="comandosChat.ativo"> Aceitar comandos do chat</label>
+      <div class="campos"><label>Moderadores que podem usar (vírgula) <input type="text" data-cfg="comandosChat.moderadores" data-tipo="lista" placeholder="usuario1, usuario2"></label></div>
+      <p class="dica">Só você (o @ acima) e os moderadores listados (ou moderadores da live) podem usar: <code>!iniciar</code> <code>!parar</code> <code>!letra</code> <code>!pausar</code> <code>!continuar</code> <code>!ranking</code> <code>!proxima</code> <code>!reiniciar</code></p>
+    </div>
+    <div class="card soPC">
+      <h2>Endereços</h2>
+      <div id="enderecos" class="dica"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTAR ================= -->
+<section id="aba-testar" class="aba">
+  <div class="grade2">
+    <div class="card">
+      <h2>Espectadores de teste (robôs)</h2>
+      <p class="dica">Coloque alguns robôs para ver o jogo funcionando sozinho, sem live. Eles respondem durante as rodadas (às vezes erram de propósito).</p>
+      <div class="linhaCampos">
+        <label>Quantidade: <b id="qtdBots">0</b> <input type="range" min="0" max="20" value="0" id="bots"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Mandar mensagem como se fosse do chat</h2>
+      <div class="campos">
+        <label>Nome do espectador <input type="text" id="simUsuario" value="Visitante"></label>
+        <label>Mensagem <input type="text" id="simTexto" placeholder="1 Maria 2 Macaco"></label>
+      </div>
+      <div class="botoes"><button class="verde" id="btSimChat">💬 Enviar</button></div>
+      <div class="botoes pequenos" id="exemplosChat"></div>
+    </div>
+    <div class="card">
+      <h2>Simular presente</h2>
+      <div class="campos">
+        <label>Quem enviou <input type="text" id="simPresUsuario" value="Fã"></label>
+        <label>Presente <input type="text" id="simPresente" value="Rose" list="listaPresentes"></label>
+        <datalist id="listaPresentes"></datalist>
+        <label>Quantidade <input type="number" id="simQtd" value="1" min="1"></label>
+        <label>Diamantes (cada) <input type="number" id="simDiam" value="1" min="0"></label>
+      </div>
+      <div class="botoes"><button class="rosa" id="btSimPresente">🎁 Enviar presente de teste</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EFEITOS ================= -->
+<section id="aba-efeitos" class="aba">
+  <div class="card">
+    <h2>Tela e efeitos</h2>
+    <div class="campos">
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.sons"> Sons</label>
+      <label>Volume <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volume"></label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.animacoes"> Animações</label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.confete"> Confete</label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.fotoPerfil"> Foto de perfil dos espectadores</label>
+    </div>
+    <div class="botoes"><button class="perigo" id="btPadrao">Voltar configurações ao padrão</button></div>
+  </div>
+</section>
+</main>
+
+<div id="toast"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/painel.js"></script>
+</body>
+</html>

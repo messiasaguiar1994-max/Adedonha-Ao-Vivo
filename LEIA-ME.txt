@@ -1,0 +1,282 @@
+=====================================================================
+   ADEDONHA AO VIVO  —  jogo de STOP para TikTok Live
+   Guia passo a passo (não precisa saber programar)
+=====================================================================
+
+Este projeto tem DUAS formas de jogar:
+  A) APLICATIVO NO CELULAR (.APK)  — veja a parte "APLICATIVO" no fim deste guia
+  B) NO PC (Windows)               — passos 1 a 5 abaixo
+
+O QUE TEM AQUI
+--------------
+- Tela do jogo (vai na live, em pé 9:16):  http://localhost:3000/jogo
+- Painel do apresentador (só você vê):     http://localhost:3000/painel
+- O jogo lê o chat e os presentes da sua live sozinho.
+- Tem robôs de teste para você ver tudo funcionando ANTES de entrar ao vivo.
+
+
+---------------------------------------------------------------------
+PASSO 1 — Instalar o Node.js (só uma vez na vida)
+---------------------------------------------------------------------
+1. Entre em https://nodejs.org/pt
+2. Clique no botão verde da versão "LTS" e baixe.
+3. Abra o arquivo baixado e vá clicando em "Next/Avançar" até "Finish".
+   (Não precisa marcar nada diferente.)
+Pronto. Se você já instalou o Node.js antes para outro jogo, pule este passo.
+
+
+---------------------------------------------------------------------
+PASSO 2 — Abrir o jogo
+---------------------------------------------------------------------
+1. Extraia o arquivo .zip numa pasta (ex.: Área de Trabalho\adedonha-ao-vivo).
+   Clique com o botão direito no .zip > "Extrair tudo".
+2. Dentro da pasta, dê dois cliques em  INICIAR-JOGO.bat
+   - Na PRIMEIRA vez ele instala as peças do jogo (1 ou 2 minutos, precisa de internet).
+   - Se o Windows mostrar "O Windows protegeu o computador", clique em
+     "Mais informações" > "Executar assim mesmo".
+   - Se o Firewall perguntar, clique em "Permitir".
+3. Vai abrir uma JANELA PRETA. Ela é o "motor" do jogo:
+   NÃO FECHE essa janela enquanto estiver jogando (pode minimizar).
+4. O painel abre sozinho no navegador. Se não abrir, clique em ABRIR-PAINEL.bat
+
+
+---------------------------------------------------------------------
+PASSO 3 — Testar sem live (faça isso antes da primeira live!)
+---------------------------------------------------------------------
+1. No painel, aba  🧪 Testar :
+   - Arraste "Espectadores de teste" para 8. Eles vão responder sozinhos.
+2. Volte na aba  🎮 Controle  e clique  ▶ Iniciar / próxima rodada.
+3. Veja na "Prévia da tela da live" a letra sendo sorteada, o cronômetro,
+   as respostas chegando, o STOP, o resultado e o ranking.
+4. Na aba 🧪 Testar você também pode:
+   - escrever mensagens como se fosse alguém do chat (ex.: 1 Maria 2 Macaco)
+   - mandar um presente de teste (ex.: Rose, Doughnut, Hand Hearts)
+5. Quando terminar, coloque os robôs de volta em 0 e clique em
+   🔁 Reiniciar partida (zera o placar dos testes).
+
+
+---------------------------------------------------------------------
+PASSO 4 — Colocar a tela do jogo na live
+---------------------------------------------------------------------
+O endereço da tela é:   http://localhost:3000/jogo
+(O tamanho certo é 1080 de largura x 1920 de altura.)
+
+>> TikTok LIVE Studio
+   1. Em "Fontes", clique em  +  (Adicionar fonte) > "Link".
+   2. Cole:  http://localhost:3000/jogo
+   3. Largura 1080, Altura 1920. Ajuste para ocupar a tela toda.
+   Se a sua versão não tiver "Link": dê dois cliques em ABRIR-TELA-DO-JOGO.bat
+   (abre o jogo numa janela em pé) e use a fonte "Captura de janela"
+   escolhendo essa janela.
+
+>> OBS Studio
+   1. Em "Fontes", clique em + > "Navegador".
+   2. URL:  http://localhost:3000/jogo   Largura 1080, Altura 1920.
+   3. Marque "Controlar áudio pelo OBS" se quiser os sons do jogo na live.
+   Quer o jogo por cima da sua câmera? Use:
+      http://localhost:3000/jogo?transparente=1
+
+O SOM: dentro do OBS / LIVE Studio os sons tocam sozinhos. Num navegador
+comum, clique uma vez na tela do jogo para liberar o som.
+
+
+---------------------------------------------------------------------
+PASSO 5 — Ligar o chat e os presentes da live no jogo
+---------------------------------------------------------------------
+Jeito recomendado (grátis, sem programa extra):
+   1. Comece a sua live (pelo celular, LIVE Studio ou OBS — tanto faz).
+   2. No painel, aba  🔌 Conexão :
+      - Escreva o seu @ do TikTok (sem o @).
+      - Clique em  🔌 Conectar.
+   3. Quando aparecer CONECTADO (verde), o chat já está jogando.
+   - Marque "Conectar sozinho quando abrir o jogo" para não precisar clicar
+     sempre (só funciona se a live já estiver no ar quando abrir o jogo;
+     se não estiver, o jogo fica tentando de novo sozinho).
+
+   Se der erro falando de "limite" ou "sign": crie uma conta grátis em
+   https://www.eulerstream.com , copie a sua chave (API key) e cole no campo
+   "Chave Euler". Depois clique em Conectar de novo.
+
+   IMPORTANTE: essa conexão usa uma biblioteca NÃO OFICIAL (tiktok-live-connector).
+   O TikTok não tem uma API oficial aberta para ler o chat. Ela funciona bem,
+   mas se o TikTok mudar algo do lado dele pode parar até a biblioteca ser
+   atualizada. Por isso existem as opções abaixo também.
+
+Jeito alternativo — TikFinity:
+   Se você já usa o TikFinity aberto no PC conectado na sua live, na aba
+   🔌 Conexão clique em "Conectar TikFinity" (endereço padrão ws://localhost:21213/).
+   Use SÓ UM dos dois jeitos (TikTok direto OU TikFinity), senão as mensagens
+   chegam em dobro.
+   Obs.: o formato exato dos eventos do TikFinity pode mudar de versão para
+   versão. Se conectar e as mensagens não aparecerem em "Chat ao vivo" no
+   painel, use o jeito recomendado acima.
+
+Jeito para qualquer outro programa — Webhook:
+   http://localhost:3000/api/chat?usuario=NOME&mensagem=TEXTO
+   http://localhost:3000/api/presente?usuario=NOME&presente=Rose&quantidade=1
+
+
+---------------------------------------------------------------------
+COMO O CHAT JOGA (a tela não explica — fica subentendido)
+---------------------------------------------------------------------
+As categorias aparecem numeradas na tela. O espectador digita no chat:
+
+   1 Maria 2 Macaco 3 Manaus          (número + palavra)
+   Maria, Macaco, Manaus              (em ordem, separado por vírgula)
+   animal: macaco                     (nome da categoria + dois pontos)
+
+- Pode mandar tudo numa mensagem só ou em várias mensagens.
+- Cada pessoa só tem UMA chance por categoria (a primeira resposta vale).
+- Mensagem normal ("boa noite live") é ignorada, não atrapalha.
+- Depois do STOP as respostas ficam como "fora do tempo".
+
+PONTOS (dá pra mudar no painel, aba 🏆 Pontos e modos):
+   Resposta que só você deu ........ 10 + 5 de bônus = 15
+   Resposta repetida (outra pessoa deu a mesma) ... 5
+   Resposta errada ................. 0
+   Primeiro a acertar a categoria .. +3
+   Completou todas as categorias ... +10
+
+
+---------------------------------------------------------------------
+COMO O JOGO DECIDE SE A RESPOSTA ESTÁ CERTA (leia!)
+---------------------------------------------------------------------
+O jogo confere SOZINHO: se começa com a letra, tamanho mínimo, palavras
+proibidas, spam (kkkkkk), resposta repetida, quem já respondeu e se chegou
+dentro do tempo.
+
+O que nenhum programa consegue garantir 100% é se "Macaco" é mesmo um
+animal. Por isso:
+   - O jogo tem um dicionário com milhares de palavras. Respostas que estão
+     nele aparecem no painel como ✅ confirmada.
+   - Palavras que não estão no dicionário aparecem como "não verificada".
+     No modo Automático elas valem pontos, mas você pode clicar ✖ para recusar.
+     No modo Rigoroso elas só valem se você clicar ✔.
+   - Clicou 📖 numa resposta? Ela é aprovada E entra no dicionário para sempre.
+   - Mudou alguma resposta depois do STOP? Os pontos são recalculados na hora.
+
+
+---------------------------------------------------------------------
+MODOS DE JOGO (aba 🎮 Controle > Modo de jogo)
+---------------------------------------------------------------------
+   🏆 Competitivo .. todo mundo soma pontos, ranking acumula.
+   ☠️ Sobrevivência . quem não acertar pelo menos 1 categoria perde uma vida;
+                     sem vidas = eliminado. O último que sobrar é o CAMPEÃO.
+   ⚡ Relâmpago ..... rodadas de 30 segundos com 3 categorias.
+   🎁 Presente ...... presentes sempre ativam eventos.
+   🎯 Desafio ....... toda rodada tem uma regra especial sorteada
+                     (palavras grandes valem dobro, categoria de ouro vale
+                     triplo, repetidas valem zero, etc.)
+
+
+---------------------------------------------------------------------
+PRESENTES (aba 🎁 Presentes)
+---------------------------------------------------------------------
+Já vem configurado assim (você muda tudo pelo painel):
+   Rose ........... +5 segundos no cronômetro (cada rosa)
+   Finger Heart ... +10 segundos
+   Doughnut ....... troca a letra
+   Hand Hearts .... elimina uma categoria da rodada
+   Confetti ....... ativa um desafio
+   Perfume ........ quem mandou ganha pontos em dobro na rodada
+   Galaxy ......... pontos x2 para todos na rodada
+
+- O nome do presente tem que ser igual ao que o TikTok manda (em inglês).
+  Quando alguém mandar um presente que ainda não tem regra, ele aparece na
+  lista "Presentes recebidos" com o botão "criar regra".
+- "Recarga" = quantos segundos esperar até o mesmo presente funcionar de novo
+  (evita trocar a letra 10 vezes seguidas).
+
+⚠️ SOBRE RESTRIÇÃO DO TIKTOK: a tela do jogo NÃO tem nenhum pedido:
+nada de "mande presente", "curta", "comente", "siga" ou "como jogar".
+Ela também NÃO mostra quem mandou presente nem agradece. Quando um presente
+ativa algo, aparece só o acontecimento do jogo (ex.: "+5 SEGUNDOS"), como
+qualquer outro evento da rodada. As regras ficam subentendidas pelo chat
+(quem já está jogando mostra para os outros como se responde).
+Se preferir zero risco, desmarque "Presentes ativam eventos" e jogue só
+com o chat. O jogo nunca fica parado: fundo, letras e cronômetro se mexem
+o tempo todo.
+
+
+---------------------------------------------------------------------
+COMANDOS PELO CHAT (só você e seus moderadores)
+---------------------------------------------------------------------
+   !iniciar   começa a rodada (ou pula para a próxima)
+   !parar     STOP (encerra a rodada agora)
+   !letra     sorteia outra letra
+   !pausar    pausa o cronômetro      !continuar   volta
+   !ranking   mostra o ranking na tela
+   !proxima   vai para a próxima rodada
+   !reiniciar zera a partida
+Quem pode: o @ que você colocou na aba Conexão, os moderadores da sua live
+e os nomes que você listar em "Moderadores que podem usar".
+
+
+---------------------------------------------------------------------
+CONTROLAR PELO CELULAR
+---------------------------------------------------------------------
+Com o PC e o celular no MESMO Wi-Fi, abra no navegador do celular o endereço
+que aparece na janela preta ("Painel pelo celular: http://192.168.x.x:3000/painel").
+Assim você controla o jogo pelo celular enquanto a tela roda no PC.
+
+
+---------------------------------------------------------------------
+PROBLEMAS COMUNS
+---------------------------------------------------------------------
+- "A porta 3000 já está em uso": o jogo já está aberto em outra janela preta.
+  Feche as janelas pretas e abra o INICIAR-JOGO.bat de novo.
+- A tela da live ficou preta/branca: confira se a janela preta está aberta.
+  No OBS/LIVE Studio, clique com o direito na fonte > "Atualizar".
+- "não está ao vivo agora": comece a live primeiro e depois clique Conectar.
+- O placar fica salvo (pasta data). Fechou sem querer? Abra de novo e o
+  ranking volta. Para zerar: 🔁 Reiniciar partida.
+- Suas configurações ficam em data\config.json. Para voltar tudo ao padrão:
+  aba ✨ Tela e efeitos > "Voltar configurações ao padrão".
+
+
+---------------------------------------------------------------------
+ARQUIVOS (para quem quiser mexer no futuro)
+---------------------------------------------------------------------
+   server.js ............. liga tudo (servidor local)
+   src\game.js ........... regras: rodadas, pontos, modos, presentes
+   src\parser.js ......... entende as mensagens do chat
+   src\dicionario.js ..... listas de palavras por categoria
+   src\conexoes.js ....... TikTok direto, TikFinity e webhook
+   src\config.js ......... configurações padrão
+   public\jogo.*  ........ tela da live
+   public\painel.* ....... painel do apresentador
+
+
+=====================================================================
+   APLICATIVO NO CELULAR (.APK)
+=====================================================================
+Funciona no mesmo esquema dos seus outros jogos (pescaria, elefante...):
+  - o APLICATIVO roda o jogo inteiro no celular;
+  - um SERVIDOR GRÁTIS no Render lê a sua live e manda os comentários e
+    presentes para o aplicativo. Não precisa de PC ligado.
+
+1) GitHub: o projeto fica num repositório. Toda vez que algo muda, o
+   próprio GitHub monta o APK sozinho (aba "Actions", leva uns 5 minutos).
+   O APK pronto fica em:  Releases > adedonha-ao-vivo.apk
+   Baixe no celular e instale (permita "instalar apps desconhecidos").
+
+2) Render (servidor): no render.com > New > Blueprint > escolha o
+   repositório. Ele lê o arquivo render.yaml e cria o serviço
+   "adedonha-ao-vivo". O endereço fica parecido com:
+       https://adedonha-ao-vivo.onrender.com
+   Se o Render der outro endereço, copie e cole no aplicativo em
+   "Avançado > Endereço do servidor" (ou no painel, aba Conexão).
+   Erro de limite? No Render, em Environment, coloque EULER_API_KEY com a
+   sua chave grátis do eulerstream.com.
+
+3) No celular:
+   - Comece a live.
+   - Abra o app Adedonha Ao Vivo, digite seu @ e toque em
+     "Conectar na live e jogar". A primeira conexão pode levar até
+     1 minuto (o servidor grátis estava dormindo).
+   - Para testar sem live: "Testar sem live (robôs)".
+   - Durante o jogo, TOQUE 3 VEZES RÁPIDO NA TELA para abrir o painel
+     (iniciar, STOP, pausar, categorias, pontos, presentes, modos...).
+     O botão "voltar" do celular fecha o painel.
+   - Placar e configurações ficam salvos no próprio celular.
+   - Os comandos pelo chat (!iniciar, !parar, !letra...) também funcionam.

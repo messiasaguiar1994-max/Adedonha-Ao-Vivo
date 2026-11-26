@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adedonha Ao Vivo — Tela do Jogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/jogo.css">
+</head>
+<body>
+<div id="palco">
+  <div id="fundo">
+    <div class="brilho b1"></div><div class="brilho b2"></div><div class="brilho b3"></div>
+    <div id="letrasVoando"></div>
+  </div>
+
+  <header id="topo">
+    <div id="logo" aria-label="Adedonha"></div>
+    <div id="subtitulo"><span class="aoVivo">● AO VIVO</span><span id="txtRodada">PREPARANDO</span><span id="txtModo"></span></div>
+  </header>
+
+  <section id="heroi">
+    <div id="cartaLetra"><div class="rotulo">LETRA</div><div id="letra">?</div></div>
+    <div id="relogio">
+      <svg viewBox="0 0 200 200"><circle class="trilho" cx="100" cy="100" r="88"/><circle id="arco" class="arco" cx="100" cy="100" r="88"/></svg>
+      <div id="segundos">--</div><div class="rotulo">SEGUNDOS</div>
+    </div>
+  </section>
+
+  <div id="faixas"></div>
+
+  <!-- jogo em andamento -->
+  <section id="telaJogo" class="tela">
+    <div id="listaCategorias"></div>
+    <div id="feed"></div>
+  </section>
+
+  <!-- espera -->
+  <section id="telaEspera" class="tela">
+    <div class="cartaoGrande">
+      <div class="tituloGrande">PREPARE-SE!</div>
+      <div class="textoMedio">Próxima rodada</div>
+      <div id="rankingEspera"></div>
+    </div>
+  </section>
+
+  <!-- resultado -->
+  <section id="telaResultado" class="tela">
+    <div class="tituloSecao">RESULTADO DA RODADA</div>
+    <div id="podioRodada"></div>
+    <div id="resultadoCategorias"></div>
+  </section>
+
+  <!-- ranking -->
+  <section id="telaRanking" class="tela">
+    <div class="tituloSecao">🏆 RANKING GERAL</div>
+    <div id="listaRanking"></div>
+  </section>
+
+  <!-- campeão -->
+  <section id="telaFim" class="tela">
+    <div class="coroa">👑</div>
+    <div class="tituloGrande">CAMPEÃO!</div>
+    <div id="campeao"></div>
+  </section>
+
+  <footer id="rodape">
+    <div id="miniRanking"></div>
+  </footer>
+
+  <div id="alertas"></div>
+  <canvas id="confete" width="1080" height="1920"></canvas>
+  <div id="ativarSom">🔊 Clique aqui para ativar o som</div>
+  <div id="semConexao">Reconectando ao jogo...</div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/sons.js"></script>
+<script src="/jogo.js"></script>
+</body>
+</html>
