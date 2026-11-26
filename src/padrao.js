@@ -29,12 +29,12 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 3,
+  versaoConfig: 4,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
   categorias: [
-    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: true },
+    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: true, livre: true },
     { id: 'animal', nome: 'Animal', apelidos: ['animal', 'animais', 'bicho'], ativa: true },
     { id: 'cidade', nome: 'Cidade', apelidos: ['cidade', 'cid', 'cep'], ativa: true },
     { id: 'pais', nome: 'País', apelidos: ['pais', 'país', 'paises'], ativa: true },
@@ -42,8 +42,8 @@ export const PADRAO = {
     { id: 'fruta', nome: 'Fruta', apelidos: ['fruta', 'frutas', 'fruto'], ativa: true },
     { id: 'objeto', nome: 'Objeto', apelidos: ['objeto', 'objetos', 'obj', 'coisa'], ativa: true },
     { id: 'profissao', nome: 'Profissão', apelidos: ['profissao', 'profissão', 'prof', 'trabalho'], ativa: true },
-    { id: 'filme', nome: 'Filme ou série', apelidos: ['filme', 'serie', 'série', 'filmes', 'fs'], ativa: true },
-    { id: 'celebridade', nome: 'Celebridade', apelidos: ['celebridade', 'famoso', 'famosa', 'celeb'], ativa: true },
+    { id: 'filme', nome: 'Filme ou série', apelidos: ['filme', 'serie', 'série', 'filmes', 'fs'], ativa: true, livre: true },
+    { id: 'celebridade', nome: 'Celebridade', apelidos: ['celebridade', 'famoso', 'famosa', 'celeb'], ativa: true, livre: true },
   ],
 
   // ---- Validação ----
@@ -129,6 +129,11 @@ export function migrar(cfg) {
     cfg.versaoConfig = 3;
     cfg.tempoRodada = 30; // rodadas de 30 segundos
     if (cfg.relampago) cfg.relampago.tempo = 15;
+  }
+  if (cfg.versaoConfig < 4) {
+    cfg.versaoConfig = 4;
+    // nomes, filmes e celebridades são infinitos: aceita qualquer palavra com a letra
+    for (const c of cfg.categorias || []) if (['nome', 'filme', 'celebridade'].includes(c.id)) c.livre = true;
   }
   return cfg;
 }

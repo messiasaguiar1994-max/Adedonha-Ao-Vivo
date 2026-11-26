@@ -340,7 +340,7 @@ export class Jogo extends Emissor {
     else if (proibidas.some((p) => norm === p || norm.includes(p))) { r.status = 'invalida'; r.motivo = 'palavra proibida'; }
     else if (/(.)\1\1\1/.test(semEspaco)) { r.status = 'invalida'; r.motivo = 'parece spam'; }
     else if (estaNoDicionario(cat.id, palavra)) { r.verificada = true; }
-    else if (v.modo === 'dicionario' && temDicionario(cat.id)) { r.status = 'pendente'; r.motivo = 'não reconhecida (aprove no painel)'; }
+    else if (v.modo === 'dicionario' && temDicionario(cat.id) && !this.cfg.categorias.find((c) => c.id === cat.id)?.livre) { r.status = 'pendente'; r.motivo = 'não reconhecida (aprove no painel)'; }
     else { r.motivo = temDicionario(cat.id) ? 'não está no dicionário' : ''; }
     return r;
   }
