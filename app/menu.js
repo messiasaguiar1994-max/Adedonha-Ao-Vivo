@@ -5,16 +5,29 @@
   const cfg = window.__cfg;
   const acao = (tipo, extra = {}) => central.acao({ tipo, ...extra });
 
+  const ROBOS = new Set(['ana_bia', 'joaozinho22', 'mari.souza', 'pedrão', 'lu_gamer', 'carlinha', 'thiago_rj', 'duda', 'rafa_sp', 'gabi.oficial', 'bruninho', 'lari', 'vini_bh', 'juju', 'felipe007', 'paty', 'leo_nordeste', 'nanda', 'caio', 'bela']);
   const menu = $('#menuApp');
   const painel = $('#painelApp');
   $('#mUsuario').value = cfg.tiktok.usuario || '';
   $('#mServidor').value = cfg.app.servidor || '';
 
+  // últimos comentários recebidos (para conferir se a live está chegando)
+  let ultimos = [];
+  let totalChat = 0;
+  const escH = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function mostrarChat() {
+    const el = $('#mChat');
+    if (!ultimos.length) { el.innerHTML = window.__conexoes.tiktok.status === 'conectado' ? '💬 Nenhum comentário chegou ainda.' : ''; return; }
+    el.innerHTML = `💬 Comentários que chegaram: ${totalChat}<br>` + ultimos.map((m) => `<b>${escH(m.nome)}:</b> ${escH(m.texto)}`).join('<br>');
+  }
+
   // status da conexão no menu
   central.conectar({
     papel: 'painel',
     enviar(ev, d) {
+      if (ev === 'chat_bruto') { totalChat++; ultimos.unshift(d); ultimos = ultimos.slice(0, 3); mostrarChat(); return; }
       if (ev !== 'conexoes') return;
+      mostrarChat();
       const t = d.tiktok;
       const el = $('#mStatus');
       el.className = `mStatus ${t.status}`;
@@ -30,11 +43,14 @@
   }
 
   function fecharMenu() { menu.classList.add('escondido'); }
-  function abrirMenu() { menu.classList.remove('escondido'); }
+  function abrirMenu() { menu.classList.remove('escondido'); mostrarChat(); }
 
   $('#mConectar').onclick = () => {
     if (!salvarCampos()) { $('#mUsuario').focus(); $('#mStatus').textContent = 'Digite o seu @ do TikTok.'; return; }
+    // saindo do teste: tira os robôs do placar
+    if (central.simulador.quantidade > 0 || [...central.jogo.jogadores.keys()].some((id) => ROBOS.has(id))) acao('reiniciar');
     acao('bots', { quantidade: 0 });
+    totalChat = 0; ultimos = [];
     acao('conectar_tiktok');
     if (['espera', 'fim'].includes(central.jogo.fase)) acao('iniciar');
     fecharMenu();
@@ -67,6 +83,7 @@
     $('#mUsuario').value = cfg.tiktok.usuario || '';
   });
   window.abrirMenuApp = abrirMenu;
+  $('#btMenuJogo').onclick = (ev) => { ev.stopPropagation(); abrirMenu(); };
 
   // tocar 3 vezes rápido na tela do jogo abre o painel
   let toques = [];

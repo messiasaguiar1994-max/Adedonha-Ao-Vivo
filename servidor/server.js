@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
   if (url.pathname === '/status') {
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS });
-    return res.end(JSON.stringify({ ok: true, jogo: 'adedonha', usuario: atual, estado: ultimoStatus.state }));
+    return res.end(JSON.stringify({ ok: true, jogo: 'adedonha', usuario: atual, estado: ultimoStatus.state, mensagem: ultimoStatus.msg, comentariosRecebidos: comentarios, ultimoComentario, appsConectados: clientes.size }));
   }
   if (url.pathname === '/foto') return foto(res, url.searchParams.get('u') || '');
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', ...CORS });
@@ -56,6 +56,8 @@ const server = http.createServer((req, res) => {
 // ---------- WebSocket com o aplicativo ----------
 const wss = new WebSocketServer({ server, path: '/ws' });
 const clientes = new Set();
+let comentarios = 0;
+let ultimoComentario = null;
 let ultimoStatus = { type: 'status', state: 'idle', msg: 'Digite seu @ e toque em Conectar.' };
 const enviar = (ws, obj) => { try { ws.send(JSON.stringify(obj)); } catch { /* */ } };
 const todos = (obj) => { for (const c of clientes) enviar(c, obj); };
@@ -101,7 +103,15 @@ async function ligarLive(nome) {
   const c = new TikTokLiveConnection(nome, { processInitialData: false, ...(EULER ? { signApiKey: EULER } : {}) });
   con = c;
 
-  c.on(WebcastEvent.CHAT, (d) => todos({ type: 'chat', user: usuario(d), texto: d.comment || '' }));
+  const aoComentar = (d) => {
+    const u = usuario(d);
+    const texto = String(d.comment ?? d.content ?? '');
+    comentarios++;
+    ultimoComentario = { de: u.nome, texto, hora: new Date().toISOString() };
+    console.log(`[chat] ${u.nome}: ${texto}`);
+    todos({ type: 'chat', user: u, texto });
+  };
+  c.on(WebcastEvent.CHAT, aoComentar);
   c.on(WebcastEvent.GIFT, (d) => {
     const g = d.giftDetails || {};
     if (g.giftType === 1 && !d.repeatEnd) return; // sequência (combo) ainda em andamento
