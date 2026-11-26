@@ -81,11 +81,11 @@
       else el.value = v ?? '';
     });
     const dicas = {
-      competitivo: 'Todos jogam por pontos. Ranking acumula entre as rodadas.',
+      competitivo: 'Uma categoria e uma letra por rodada. Quem acerta ganha pontos; resposta que ninguém mais deu vale mais. Ranking acumula entre as rodadas.',
       sobrevivencia: 'Quem não acertar o mínimo de respostas perde uma vida. Sem vidas = eliminado. O último que sobrar é o campeão.',
-      relampago: 'Rodadas curtinhas com poucas categorias (ajuste em "Pontos e modos").',
+      relampago: 'Rodadas curtinhas (ajuste o tempo em "Pontos e modos").',
       presente: 'Igual ao competitivo, mas os presentes sempre ativam eventos (aba Presentes).',
-      desafio: 'Toda rodada vem com uma regra especial sorteada (palavras grandes valem dobro, categoria de ouro etc.).',
+      desafio: 'Toda rodada vem com uma regra especial sorteada (palavras grandes valem dobro, rodada de ouro etc.).',
     };
     $('#dicaModo').textContent = dicas[cfg.modo] || '';
   }
@@ -182,7 +182,7 @@
   $('#simTexto').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') enviarSim(); });
   function desenharExemplos() {
     const L = (E && E.letra) || 'M';
-    const ex = [`1 ${L}aria 2 ${L}acaco`, `${L}ario, ${L}ico, ${L}anaus`, `animal: ${L}acaco`, '!iniciar', '!parar', '!letra', '!ranking'];
+    const ex = [`${L}acaco`, `${L}aria`, `${L}anaus`, '!iniciar', '!parar', '!letra', '!ranking'];
     const html = ex.map((t) => `<button data-ex="${esc(t)}">${esc(t)}</button>`).join('');
     if ($('#exemplosChat').dataset.h !== html) { $('#exemplosChat').innerHTML = html; $('#exemplosChat').dataset.h = html; }
   }

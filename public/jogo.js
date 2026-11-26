@@ -107,56 +107,38 @@
     // telas
     if (e.mostrarRanking) { telaAtiva('telaRanking'); desenharRanking(e); }
     else if (e.fase === 'espera') { telaAtiva('telaEspera'); desenharEspera(e); }
-    else if (['sorteio', 'jogando', 'pausado'].includes(e.fase)) { telaAtiva('telaJogo'); desenharCategorias(e); desenharFeed(e); }
+    else if (['sorteio', 'jogando', 'pausado'].includes(e.fase)) { telaAtiva('telaJogo'); desenharRodada(e); }
     else if (e.fase === 'resultado') { telaAtiva('telaResultado'); if (!anterior || anterior.fase !== 'resultado' || JSON.stringify(anterior.resultado) !== JSON.stringify(e.resultado)) desenharResultado(e); }
     else if (e.fase === 'ranking') { telaAtiva('telaRanking'); if (!anterior || anterior.fase !== 'ranking') desenharRanking(e); }
     else if (e.fase === 'fim') { telaAtiva('telaFim'); desenharCampeao(e); }
 
-    desenharMiniRanking(e);
+    desenharRankingVivo(e);
   }
 
-  function desenharCategorias(e) {
-    const n = e.categorias.length;
-    const lista = $('#listaCategorias');
-    const altura = Math.max(64, Math.min(116, Math.floor((620 - (n - 1) * 14) / Math.max(1, n))));
-    lista.style.setProperty('--alturaCat', `${altura}px`);
-    const assin = e.categorias.map((c) => `${c.id}|${c.eliminada}|${c.ouro}`).join(',') + e.rodada;
-    if (assin !== assinaturaCats) {
-      assinaturaCats = assin;
-      lista.innerHTML = e.categorias.map((c) => `
-        <div class="cat ${c.eliminada ? 'eliminada' : ''} ${c.ouro ? 'ouro' : ''}" data-id="${esc(c.id)}">
-          <div class="numCat">${c.num}</div>
-          <div class="nomeCat">${c.ouro ? '⭐ ' : ''}${esc(c.nome)}</div>
-          <div class="ultimas"></div>
-          <div class="totalCat">0</div>
-        </div>`).join('');
-      for (const k of Object.keys(totaisAntes)) delete totaisAntes[k];
+  let catMostrada = '';
+  function desenharRodada(e) {
+    const nome = e.fase === 'sorteio' ? '???' : (e.categoria ? e.categoria.nome : '—');
+    const el = $('#nomeCategoria');
+    if (nome !== catMostrada) {
+      catMostrada = nome;
+      el.textContent = nome.toUpperCase();
+      const tam = nome.length > 14 ? 70 : nome.length > 10 ? 86 : 104;
+      el.style.fontSize = `${tam}px`;
+      if (nome !== '???') pulsar(el, 'pousou');
     }
-    for (const c of e.categorias) {
-      const el = lista.querySelector(`.cat[data-id="${CSS.escape(c.id)}"]`);
-      if (!el) continue;
-      el.querySelector('.totalCat').textContent = c.total;
-      const html = c.ultimas.slice(0, 2).map((u) => `<span class="chip">${avatar(u.nome, u.foto)}${esc(u.palavra)}</span>`).join('');
-      const ult = el.querySelector('.ultimas');
-      if (ult.dataset.h !== html) { ult.innerHTML = html; ult.dataset.h = html; }
-      if ((totaisAntes[c.id] || 0) < c.total) pulsar(el, 'pisca');
-      totaisAntes[c.id] = c.total;
-    }
+    const n = e.parede.length ? e.jogadoresRodada : 0;
+    $('#contRespostas').textContent = e.fase === 'sorteio' ? '' : n ? `✅ ${n} ${n === 1 ? 'acertou' : 'acertaram'}` : '';
+    const html = e.parede.slice(0, 12).map((r) => `<div class="pchip ${r.unica ? 'unica' : ''}">${avatar(r.nome, r.foto)}<div class="txt">${esc(r.palavra)}<span class="quem">${esc(r.nome)}</span></div></div>`).join('');
+    const p = $('#parede');
+    if (p.dataset.h !== html) { p.innerHTML = html; p.dataset.h = html; }
   }
 
-  function desenharFeed(e) {
-    const feed = $('#feed');
-    const novos = [...e.feed].reverse().filter((f) => !feedVisto.has(f.t + f.nome));
-    for (const f of novos) {
-      feedVisto.add(f.t + f.nome);
-      const div = document.createElement('div');
-      div.className = 'itemFeed';
-      const resps = (f.itens || []).map((i) => `<span class="${i.status === 'invalida' ? 'ruim' : i.status === 'pendente' ? 'pend' : 'ok'}">${esc(i.palavra)}</span>`).join(' · ');
-      div.innerHTML = `${avatar(f.nome, f.foto)}<div class="resps"><b>${esc(f.nome)}</b> ${resps}</div>`;
-      feed.prepend(div);
-    }
-    while (feed.children.length > 5) feed.lastChild.remove();
-    if (e.fase === 'sorteio' && feed.children.length && !e.feed.length) feed.innerHTML = '';
+  function desenharRankingVivo(e) {
+    const html = e.ranking.length
+      ? e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('')
+      : '<div class="vazioRV">Placar zerado</div>';
+    const el = $('#listaRV');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
   }
 
   function desenharResultado(e) {
@@ -172,11 +154,11 @@
       }).join('')
       : '<div class="vazio">Ninguém pontuou nesta rodada 😅</div>';
     const nCat = Math.max(1, r.categorias.length);
-    const alturaChips = Math.max(42, Math.floor((560 - nCat * 70) / nCat / 46) * 46 - 4);
+    const alturaChips = Math.max(42, Math.floor((330 - nCat * 70) / nCat / 46) * 46 - 4);
     $('#resultadoCategorias').style.setProperty('--alturaChips', `${alturaChips}px`);
     const maxChips = Math.max(5, Math.floor(30 / nCat));
     $('#resultadoCategorias').innerHTML = r.categorias.map((c, i) => {
-      const ord = [...c.respostas].sort((a, b) => b.pontos - a.pontos);
+      const ord = c.respostas.filter((x) => x.status === 'valida').sort((a, b) => b.pontos - a.pontos);
       const chips = ord.slice(0, maxChips).map((x) => {
         const cls = x.status === 'invalida' ? 'invalida' : x.status === 'pendente' ? 'pendente' : x.unica ? 'unica' : 'repetida';
         return `<span class="rchip ${cls}">${esc(x.palavra)} <small>${x.status === 'invalida' ? '✖' : '+' + x.pontos}</small></span>`;
@@ -204,18 +186,8 @@
     if ($('#campeao').dataset.h !== html) { $('#campeao').innerHTML = html; $('#campeao').dataset.h = html; }
   }
 
-  function desenharMiniRanking(e) {
-    const med = ['🥇', '🥈', '🥉'];
-    const html = e.ranking.slice(0, 3).map((j, i) => `<div class="mini"><span class="med">${med[i]}</span>${avatar(j.nome, j.foto)}<span class="n">${esc(j.nome)}</span><span class="p">${j.pontos}</span></div>`).join('');
-    const el = $('#miniRanking');
-    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
-  }
+  function desenharEspera() { /* só o PREPARE-SE; o ranking fica no quadro de baixo */ }
 
-  function desenharEspera(e) {
-    const html = e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('');
-    const el = $('#rankingEspera');
-    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
-  }
 
   function pulsar(el, cls) {
     el.classList.remove(cls);
@@ -284,6 +256,7 @@
       case 'stop': alerta('STOP!', 'vermelho', 2200, 'gigante'); Sons.tocar('stop'); break;
       case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
       case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } break;
+      case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); break;
       case 'categoria_eliminada': alerta(`💥 SAIU: ${esc(ev.cat)}`, 'vermelho'); Sons.tocar('ruim'); break;
       case 'desafio': alerta(`🎯 ${esc(ev.desafio.nome)}<small>${esc(ev.desafio.descricao)}${ev.catOuro ? ' — ' + esc(ev.catOuro) : ''}</small>`, 'rosa', 3400); Sons.tocar('alerta'); break;
       case 'multiplicador': alerta(`✖${ev.valor} PONTOS!`, 'amarelo'); Sons.tocar('alerta'); confete(80); break;
@@ -294,7 +267,7 @@
       case 'campeao': Sons.tocar('campeao'); confete(250); break;
       case 'pausa': alerta('⏸ PAUSA', 'ciano', 1600); break;
       case 'continuar': alerta('▶ CONTINUANDO!', 'verde', 1400); break;
-      case 'reiniciado': alerta('🔁 NOVA PARTIDA!', 'amarelo'); feedVisto.clear(); $('#feed').innerHTML = ''; break;
+      case 'reiniciado': alerta('🔁 NOVA PARTIDA!', 'amarelo'); break;
       case 'aviso': alerta(esc(ev.texto), 'vermelho'); break;
       default: break;
     }

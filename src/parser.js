@@ -132,7 +132,7 @@ export function interpretarMensagem(mensagem, categorias, letra) {
     return saida;
   }
   // rodada com uma única categoria: qualquer palavra com a letra vale
-  if (n === 1 && palavras.length <= 4 && normalizar(txt).startsWith(L)) {
+  if (n === 1 && palavras.length <= 3 && normalizar(txt).startsWith(L)) {
     add(categorias[0], txt);
   }
   return saida;

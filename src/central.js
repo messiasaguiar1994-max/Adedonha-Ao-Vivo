@@ -55,7 +55,8 @@ export function criarCentral({ cfg, salvarCfg, conexoes, armazenamento, extras =
       case 'reiniciar': jogo.reiniciar(); break;
       case 'ranking': jogo.mostrarRanking(Number(a.segundos) || 10); break;
       case 'mais_tempo': jogo.adicionarTempo(Number(a.segundos) || 10); break;
-      case 'eliminar_categoria': jogo.eliminarCategoria(a.catId); break;
+      case 'trocar_categoria':
+      case 'eliminar_categoria': jogo.trocarCategoria(); break;
       case 'desafio': if (!jogo.ativarDesafio(true)) jogo.pendentes.desafio = true; break;
       case 'multiplicador': jogo.multiplicador = Math.max(1, Number(a.valor) || 2); jogo.alerta('multiplicador', { valor: jogo.multiplicador }); jogo.mudou(); break;
       case 'proxima_relampago': jogo.pendentes.relampago = true; jogo.alerta('agendado', { texto: 'PRÓXIMA RODADA: RELÂMPAGO!' }); jogo.mudou(); break;

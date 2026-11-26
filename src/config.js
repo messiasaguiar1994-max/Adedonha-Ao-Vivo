@@ -1,7 +1,7 @@
 // Configurações no PC: lê/grava data/config.json
 import fs from 'node:fs';
 import path from 'node:path';
-import { PADRAO, mesclar } from './padrao.js';
+import { PADRAO, mesclar, migrar } from './padrao.js';
 
 export { PADRAO };
 const PASTA_DADOS = path.resolve('data');
@@ -9,7 +9,7 @@ const ARQ_CONFIG = path.join(PASTA_DADOS, 'config.json');
 
 export function carregarConfig() {
   try {
-    if (fs.existsSync(ARQ_CONFIG)) return mesclar(structuredClone(PADRAO), JSON.parse(fs.readFileSync(ARQ_CONFIG, 'utf8')));
+    if (fs.existsSync(ARQ_CONFIG)) return migrar(mesclar(structuredClone(PADRAO), { versaoConfig: 1, ...JSON.parse(fs.readFileSync(ARQ_CONFIG, 'utf8')) }));
   } catch (e) {
     console.error('[config] arquivo config.json com erro, usando padrão:', e.message);
   }

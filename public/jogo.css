@@ -79,7 +79,7 @@ body.transparente #fundo { display: none; }
 @keyframes tique { 0% { transform: scale(1.25); } 40% { transform: scale(1); } }
 
 /* ---------- faixas (desafio, multiplicador) ---------- */
-#faixas { position: absolute; top: 680px; left: 40px; right: 40px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; z-index: 4; }
+#faixas { position: absolute; top: 652px; left: 40px; right: 40px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; z-index: 4; }
 .faixa { padding: 10px 28px; border-radius: 40px; font-weight: 800; font-size: 32px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 0 rgba(0,0,0,.25); animation: entrar .5s cubic-bezier(.2,1.6,.4,1); }
 .faixa.desafio { background: linear-gradient(90deg, var(--rosa), #ff7a3d); }
 .faixa.mult { background: linear-gradient(90deg, #ffd23f, #ff9f1c); color: #3a1500; }
@@ -199,3 +199,33 @@ body.semAnimacao * { animation-duration: .001s !important; animation-iteration-c
 #confete { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
 #ativarSom { position: absolute; top: 12px; right: 12px; z-index: 40; background: rgba(0,0,0,.7); padding: 10px 18px; border-radius: 14px; font-size: 24px; cursor: pointer; display: none; }
 #semConexao { position: absolute; bottom: 300px; left: 50%; transform: translateX(-50%); z-index: 40; background: var(--vermelho); padding: 10px 24px; border-radius: 20px; font-size: 30px; font-weight: 800; display: none; }
+
+/* ---------- uma categoria por rodada ---------- */
+#telaJogo, #telaEspera { top: 725px; bottom: 560px; }
+#cartaoCategoria { margin: 0 auto; width: 860px; padding: 10px 30px 18px; border-radius: 36px; text-align: center;
+  background: linear-gradient(135deg, #ff3d9a, #8b2bd9); box-shadow: 0 12px 0 rgba(0,0,0,.3), 0 0 60px rgba(255,61,154,.35);
+  animation: balanca 5s ease-in-out infinite; }
+#cartaoCategoria .rotulo { font-weight: 800; font-size: 30px; letter-spacing: 8px; opacity: .85; }
+#nomeCategoria { font-family: var(--fonteTitulo); font-size: 104px; line-height: 1.05; text-shadow: 0 6px 0 rgba(0,0,0,.3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#nomeCategoria.pousou { animation: pousar .7s cubic-bezier(.2,1.6,.4,1); }
+#contRespostas { text-align: center; font-weight: 800; font-size: 32px; margin: 18px 0 12px; opacity: .9; min-height: 40px; }
+#parede { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-content: flex-start; max-height: 330px; overflow: hidden; }
+.pchip { display: flex; align-items: center; gap: 10px; padding: 6px 20px 6px 6px; border-radius: 40px; background: rgba(0,0,0,.38); border: 3px solid rgba(255,210,63,.7);
+  font-size: 34px; font-weight: 800; max-width: 480px; animation: entrar .45s cubic-bezier(.2,1.6,.4,1); }
+.pchip.unica { border-color: var(--verde); background: rgba(61,220,132,.22); }
+.pchip .av { width: 56px; height: 56px; font-size: 26px; }
+.pchip .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pchip .quem { font-size: 22px; font-weight: 600; opacity: .75; display: block; line-height: 1; }
+
+#rankingVivo { position: absolute; left: 40px; right: 40px; bottom: 36px; height: 500px; z-index: 5; padding: 18px 24px; border-radius: 36px;
+  background: rgba(0,0,0,.4); border: 3px solid rgba(255,210,63,.45); backdrop-filter: blur(6px); }
+.tituloRV { font-family: var(--fonteTitulo); font-size: 52px; color: var(--amarelo); text-align: center; text-shadow: 0 5px 0 rgba(0,0,0,.35); margin-bottom: 8px; }
+#listaRV { display: flex; flex-direction: column; gap: 10px; }
+#listaRV .linhaRank { font-size: 34px; padding: 6px 20px; }
+#listaRV .linhaRank .av { width: 62px; height: 62px; }
+#listaRV .vazioRV { text-align: center; opacity: .6; font-size: 30px; margin-top: 60px; }
+body.fase-ranking #rankingVivo, body.fase-fim #rankingVivo { display: none; }
+#telaRanking { bottom: 40px; }
+#telaResultado { bottom: 560px; }
+#telaResultado .tituloSecao { font-size: 56px; margin-bottom: 10px; }
+#telaResultado .pod { padding: 10px; } #telaResultado .pod .av { width: 64px; height: 64px; font-size: 30px; } #telaResultado .pod .pts { font-size: 44px; }

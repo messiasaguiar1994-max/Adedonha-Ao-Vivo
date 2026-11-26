@@ -119,24 +119,18 @@ Jeito para qualquer outro programa — Webhook:
 ---------------------------------------------------------------------
 COMO O CHAT JOGA (a tela não explica — fica subentendido)
 ---------------------------------------------------------------------
-As categorias aparecem numeradas na tela. O espectador digita no chat:
+A cada rodada o jogo sorteia UMA categoria e UMA letra.
+Ex.: categoria ANIMAL, letra A  ->  o chat escreve:  abelha   /  arara  ...
 
-   1 Maria 2 Macaco 3 Manaus          (número + palavra)
-   Maria, Macaco, Manaus              (em ordem, separado por vírgula)
-   animal: macaco                     (nome da categoria + dois pontos)
-
-- Pode mandar tudo numa mensagem só ou em várias mensagens.
-- Cada pessoa só tem UMA chance por categoria (a primeira resposta vale).
+- Cada pessoa vale com UMA resposta certa por rodada.
+- Errou ou o jogo não reconheceu? Pode tentar de novo.
 - Mensagem normal ("boa noite live") é ignorada, não atrapalha.
-- Depois do STOP as respostas ficam como "fora do tempo".
+- Na tela aparecem as respostas certas e o RANKING (top 5) o tempo todo.
 
 PONTOS (dá pra mudar no painel, aba 🏆 Pontos e modos):
    Resposta que só você deu ........ 10 + 5 de bônus = 15
    Resposta repetida (outra pessoa deu a mesma) ... 5
-   Resposta errada ................. 0
-   Primeiro a acertar a categoria .. +3
-   Completou todas as categorias ... +10
-
+   Primeiro a acertar na rodada .... +3
 
 ---------------------------------------------------------------------
 COMO O JOGO DECIDE SE A RESPOSTA ESTÁ CERTA (leia!)

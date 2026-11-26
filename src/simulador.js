@@ -16,7 +16,8 @@ export function criarSimulador(jogo, mandarChat) {
       if (jogo.fase !== 'jogando') return;
       if (Math.random() > 0.35 + this.quantidade * 0.03) return;
       const nome = NOMES_BOT[Math.floor(Math.random() * this.quantidade)];
-      const cats = jogo.categorias.filter((c) => !c.eliminada);
+      const cats = jogo.catAtual() ? [jogo.catAtual()] : [];
+      if (!cats.length) return;
       const L = normalizar(jogo.letra);
       const escolher = (c) => {
         const opcoes = palavrasDe(c.id).filter((p) => normalizar(p).startsWith(L));

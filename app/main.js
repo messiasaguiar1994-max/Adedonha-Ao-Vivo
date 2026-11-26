@@ -2,7 +2,7 @@
 // A tela do jogo e o painel usam o mesmo código do PC; aqui trocamos o socket.io
 // por um "canal" interno que fala direto com a central do jogo.
 import { criarCentral } from '../src/central.js';
-import { PADRAO, mesclar } from '../src/padrao.js';
+import { PADRAO, mesclar, migrar } from '../src/padrao.js';
 import { ConexoesApp } from './conexoes-app.js';
 
 const PREFIXO = 'adedonha:';
@@ -15,7 +15,9 @@ const armazenamento = {
   },
 };
 
-const cfg = mesclar(structuredClone(PADRAO), armazenamento.ler('config', {}));
+const salvo = armazenamento.ler('config', {}) || {};
+const cfg = migrar(mesclar(structuredClone(PADRAO), { versaoConfig: 1, ...salvo }));
+if (!Object.keys(salvo).length) cfg.versaoConfig = 2;
 const conexoes = new ConexoesApp(cfg);
 const central = criarCentral({
   cfg,

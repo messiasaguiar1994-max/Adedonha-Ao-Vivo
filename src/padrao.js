@@ -25,11 +25,11 @@ export const PADRAO = {
   },
 
   // ---- Rodada ----
-  tempoRodada: 90,           // segundos
+  tempoRodada: 60,           // segundos
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  categoriasPorRodada: 5,    // quantas categorias aparecem em cada rodada
+  versaoConfig: 2,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
@@ -51,7 +51,7 @@ export const PADRAO = {
     tamanhoMinimo: 2,
     // 'auto' = aceita palavras que começam com a letra (você pode recusar no painel)
     // 'dicionario' = só aceita sozinho o que estiver no dicionário; o resto fica "pendente" até você aprovar
-    modo: 'auto',
+    modo: 'dicionario',
     palavrasProibidas: [],
   },
 
@@ -73,7 +73,7 @@ export const PADRAO = {
   },
 
   // ---- Relâmpago ----
-  relampago: { tempo: 30, categorias: 3 },
+  relampago: { tempo: 30 },
 
   // ---- Presentes ----
   presentes: {
@@ -84,7 +84,7 @@ export const PADRAO = {
       { presente: 'Rose', acao: 'mais_tempo', valor: 5, recarga: 0, ativa: true },
       { presente: 'Finger Heart', acao: 'mais_tempo', valor: 10, recarga: 0, ativa: true },
       { presente: 'Doughnut', acao: 'trocar_letra', valor: 0, recarga: 20, ativa: true },
-      { presente: 'Hand Hearts', acao: 'eliminar_categoria', valor: 0, recarga: 20, ativa: true },
+      { presente: 'Hand Hearts', acao: 'trocar_categoria', valor: 0, recarga: 20, ativa: true },
       { presente: 'Confetti', acao: 'desafio', valor: 0, recarga: 30, ativa: true },
       { presente: 'Perfume', acao: 'pontos_dobro_jogador', valor: 0, recarga: 0, ativa: true },
       { presente: 'Galaxy', acao: 'multiplicador', valor: 2, recarga: 60, ativa: true },
@@ -114,3 +114,14 @@ export function mesclar(base, extra) {
   return extra === undefined ? base : extra;
 }
 
+
+// atualiza configurações salvas de versões antigas (uma categoria por rodada)
+export function migrar(cfg) {
+  if ((cfg.versaoConfig || 1) < 2) {
+    cfg.versaoConfig = 2;
+    cfg.validacao.modo = 'dicionario';
+    if (cfg.tempoRodada > 60) cfg.tempoRodada = 60;
+    for (const r of cfg.presentes?.regras || []) if (r.acao === 'eliminar_categoria') r.acao = 'trocar_categoria';
+  }
+  return cfg;
+}

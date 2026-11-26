@@ -32,8 +32,9 @@
 
   <!-- jogo em andamento -->
   <section id="telaJogo" class="tela">
-    <div id="listaCategorias"></div>
-    <div id="feed"></div>
+    <div id="cartaoCategoria"><div class="rotulo">CATEGORIA</div><div id="nomeCategoria">—</div></div>
+    <div id="contRespostas"></div>
+    <div id="parede"></div>
   </section>
 
   <!-- espera -->
@@ -41,7 +42,6 @@
     <div class="cartaoGrande">
       <div class="tituloGrande">PREPARE-SE!</div>
       <div class="textoMedio">Próxima rodada</div>
-      <div id="rankingEspera"></div>
     </div>
   </section>
 
@@ -65,9 +65,10 @@
     <div id="campeao"></div>
   </section>
 
-  <footer id="rodape">
-    <div id="miniRanking"></div>
-  </footer>
+  <section id="rankingVivo">
+    <div class="tituloRV">🏆 RANKING</div>
+    <div id="listaRV"></div>
+  </section>
 
   <div id="alertas"></div>
   <canvas id="confete" width="1080" height="1920"></canvas>

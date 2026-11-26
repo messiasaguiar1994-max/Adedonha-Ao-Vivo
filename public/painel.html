@@ -45,7 +45,7 @@
           <button data-acao="letra">🔄 Sortear outra letra</button>
           <button data-acao="ranking">🏆 Mostrar ranking</button>
           <button data-acao="mais_tempo" data-segundos="10">⏱ +10 segundos</button>
-          <button data-acao="eliminar_categoria">💥 Eliminar categoria</button>
+          <button data-acao="trocar_categoria">🔄 Trocar categoria</button>
           <button data-acao="desafio">🎯 Ativar desafio</button>
           <button data-acao="multiplicador" data-valor="2">✖2 pontos (rodada)</button>
           <button data-acao="proxima_relampago">⚡ Próxima = relâmpago</button>
@@ -62,7 +62,6 @@
             </select>
           </label>
           <label>Tempo da rodada (s) <input type="number" min="10" max="600" data-cfg="tempoRodada"></label>
-          <label>Categorias por rodada <input type="number" min="1" max="10" data-cfg="categoriasPorRodada"></label>
           <label class="chk"><input type="checkbox" data-cfg="rodadaAutomatica"> Próxima rodada começa sozinha</label>
         </div>
         <p class="dica" id="dicaModo"></p>
@@ -108,7 +107,7 @@
 <section id="aba-categorias" class="aba">
   <div class="card">
     <h2>Categorias</h2>
-    <p class="dica">Marque as que podem sair. A cada rodada o jogo sorteia algumas delas. "Apelidos" são outras formas que o chat pode escrever (ex.: <code>bicho: macaco</code>).</p>
+    <p class="dica">Marque as que podem sair. A cada rodada o jogo sorteia UMA delas. "Apelidos" são outras formas que o chat pode escrever (ex.: <code>bicho: macaco</code>).</p>
     <div class="tabelaRolagem alta"><table id="tabCategorias"><thead><tr><th>Ativa</th><th>Nome na tela</th><th>Apelidos (separe por vírgula)</th><th></th></tr></thead><tbody></tbody></table></div>
     <div class="botoes"><button id="btNovaCat" class="verde">+ Adicionar categoria</button></div>
     <div class="linhaCampos">
@@ -127,7 +126,6 @@
         <label>Bônus por resposta única <input type="number" data-cfg="pontos.bonusUnica"></label>
         <label>Resposta repetida (0 = zera) <input type="number" data-cfg="pontos.repetida"></label>
         <label>Resposta inválida <input type="number" data-cfg="pontos.invalida"></label>
-        <label>Bônus por completar todas <input type="number" data-cfg="pontos.completou"></label>
         <label>Bônus do 1º a acertar cada categoria <input type="number" data-cfg="pontos.primeiro"></label>
       </div>
       <p class="dica">Exemplo com o padrão: resposta única = 10 + 5 = 15; repetida = 5; errada = 0.</p>
@@ -137,8 +135,8 @@
       <div class="campos">
         <label>Como validar
           <select data-cfg="validacao.modo">
-            <option value="auto">Automático: vale tudo que começa com a letra (você pode recusar)</option>
-            <option value="dicionario">Rigoroso: o que não está no dicionário fica pendente até você aprovar</option>
+            <option value="auto">Automático: vale qualquer palavra que começa com a letra</option>
+            <option value="dicionario">Pelo dicionário: só vale sozinho o que o jogo reconhece; o resto fica pendente para você aprovar (recomendado)</option>
           </select>
         </label>
         <label>Tamanho mínimo da palavra <input type="number" min="1" data-cfg="validacao.tamanhoMinimo"></label>
@@ -165,7 +163,6 @@
       <h3>⚡ Relâmpago</h3>
       <div class="campos">
         <label>Tempo (s) <input type="number" data-cfg="relampago.tempo"></label>
-        <label>Categorias <input type="number" min="1" data-cfg="relampago.categorias"></label>
       </div>
       <h3>🎯 Desafios sorteados</h3>
       <ul id="listaDesafios" class="dica"></ul>
