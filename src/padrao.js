@@ -29,22 +29,25 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 5,
+  versaoConfig: 6,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
   categorias: [
-    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: true },
-    { id: 'animal', nome: 'Animal', apelidos: ['animal', 'animais', 'bicho'], ativa: true },
-    { id: 'cidade', nome: 'Cidade', apelidos: ['cidade', 'cid', 'cep'], ativa: true },
-    { id: 'pais', nome: 'País', apelidos: ['pais', 'país', 'paises'], ativa: true },
-    { id: 'comida', nome: 'Comida', apelidos: ['comida', 'comidas', 'prato'], ativa: true },
-    { id: 'fruta', nome: 'Fruta', apelidos: ['fruta', 'frutas', 'fruto'], ativa: true },
-    { id: 'objeto', nome: 'Objeto', apelidos: ['objeto', 'objetos', 'obj', 'coisa'], ativa: true },
-    { id: 'profissao', nome: 'Profissão', apelidos: ['profissao', 'profissão', 'prof', 'trabalho'], ativa: true },
-    { id: 'filme', nome: 'Filme ou série', apelidos: ['filme', 'serie', 'série', 'filmes', 'fs'], ativa: true, livre: true },
-    { id: 'celebridade', nome: 'Celebridade', apelidos: ['celebridade', 'famoso', 'famosa', 'celeb'], ativa: true, livre: true },
+    { id: 'fruta', nome: 'Fruta', apelidos: ['fruta', 'frutas', 'fruto'], ativa: true, fala: 'uma fruta' },
+    { id: 'objeto', nome: 'Objeto', apelidos: ['objeto', 'objetos', 'obj', 'coisa'], ativa: true, fala: 'um objeto' },
+    { id: 'comida', nome: 'Comida', apelidos: ['comida', 'comidas', 'prato'], ativa: true, fala: 'uma comida' },
+    { id: 'cidade', nome: 'Cidade', apelidos: ['cidade', 'cid'], ativa: true, fala: 'uma cidade' },
+    { id: 'time', nome: 'Time de futebol', apelidos: ['time', 'times', 'clube'], ativa: true, fala: 'um time de futebol' },
+    { id: 'pais', nome: 'País', apelidos: ['pais', 'país', 'paises'], ativa: true, fala: 'um país' },
+    { id: 'planta', nome: 'Planta', apelidos: ['planta', 'plantas', 'flor', 'arvore'], ativa: true, fala: 'uma planta' },
+    { id: 'animal', nome: 'Animal', apelidos: ['animal', 'animais', 'bicho'], ativa: true, fala: 'um animal' },
+    { id: 'profissao', nome: 'Profissão', apelidos: ['profissao', 'profissão', 'prof', 'trabalho'], ativa: false, fala: 'uma profissão' },
+    { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: false, fala: 'um nome' },
+    { id: 'filme', nome: 'Filme ou série', apelidos: ['filme', 'serie', 'série', 'filmes'], ativa: false, livre: true, fala: 'um filme ou série' },
+    { id: 'celebridade', nome: 'Celebridade', apelidos: ['celebridade', 'famoso', 'famosa', 'celeb'], ativa: false, livre: true, fala: 'uma celebridade' },
   ],
+
 
   // ---- Validação ----
   validacao: {
@@ -53,6 +56,8 @@ export const PADRAO = {
     // 'dicionario' = só aceita sozinho o que estiver no dicionário; o resto fica "pendente" até você aprovar
     modo: 'dicionario',
     palavrasProibidas: [],
+    // palavra fora da lista vale sozinha se tantas pessoas diferentes mandarem a mesma (0 = desligado)
+    votosChat: 3,
   },
 
   // ---- Pontuação ----
@@ -139,6 +144,14 @@ export function migrar(cfg) {
     cfg.versaoConfig = 5;
     // nomes agora conferem na lista do IBGE
     for (const c of cfg.categorias || []) if (c.id === 'nome') c.livre = false;
+  }
+  if (cfg.versaoConfig < 6) {
+    cfg.versaoConfig = 6;
+    // categorias "fechadas", que o jogo consegue conferir sozinho; as amplas ficam desligadas
+    const novas = structuredClone(PADRAO.categorias);
+    const extras = (cfg.categorias || []).filter((c) => !novas.some((n) => n.id === c.id));
+    cfg.categorias = [...novas, ...extras.map((c) => ({ ...c, ativa: false }))];
+    cfg.validacao.votosChat = 3;
   }
   return cfg;
 }

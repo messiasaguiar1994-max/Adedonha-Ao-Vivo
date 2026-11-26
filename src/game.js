@@ -1,7 +1,7 @@
 // Motor da Adedonha: fases da rodada, respostas, pontuação, modos, presentes e comandos.
 import { Emissor } from './emissor.js';
 import { interpretarMensagem, lerComando } from './parser.js';
-import { normalizar, estaNoDicionario, temDicionario, pareceePalavra } from './dicionario.js';
+import { normalizar, estaNoDicionario, temDicionario, pareceePalavra, letrasComRespostas } from './dicionario.js';
 
 const sortear = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const embaralhar = (arr) => {
@@ -100,7 +100,11 @@ export class Jogo extends Emissor {
 
   // ---------- fluxo da rodada ----------
   sortearLetraNova() {
-    const letras = (this.cfg.letras || 'ABCDEFGHIJLMNOPRSTUV').toUpperCase().replace(/[^A-Z]/g, '').split('');
+    let letras = (this.cfg.letras || 'ABCDEFGHIJLMNOPRSTUV').toUpperCase().replace(/[^A-Z]/g, '').split('');
+    // só letras que têm respostas suficientes na categoria da rodada
+    const cat = this.catAtual();
+    const boas = cat && !this.ehLivre(cat.id) ? letrasComRespostas(cat.id, 5) : null;
+    if (boas) { const f = letras.filter((l) => boas.includes(l)); if (f.length) letras = f; }
     const evitar = new Set(this.letrasUsadas.slice(-Math.min(6, Math.max(0, letras.length - 1))));
     const opcoes = letras.filter((l) => !evitar.has(l) && l !== this.letra);
     const l = sortear(opcoes.length ? opcoes : letras);
@@ -308,6 +312,7 @@ export class Jogo extends Emissor {
       }
       this.respostas.push(r);
       novas.push(r);
+      if (r.status === 'pendente') this.aprovarPeloChat(r, novas);
     }
     const certas = novas.filter((r) => r.status === 'valida');
     if (novas.length) this.mudou();
@@ -340,9 +345,25 @@ export class Jogo extends Emissor {
     else if (proibidas.some((p) => norm === p || norm.includes(p))) { r.status = 'invalida'; r.motivo = 'palavra proibida'; }
     else if (/(.)\1\1\1/.test(semEspaco) || !pareceePalavra(palavra)) { r.status = 'invalida'; r.motivo = 'não parece palavra'; }
     else if (estaNoDicionario(cat.id, palavra)) { r.verificada = true; }
-    else if (v.modo === 'dicionario' && temDicionario(cat.id) && !this.cfg.categorias.find((c) => c.id === cat.id)?.livre) { r.status = 'pendente'; r.motivo = 'não reconhecida (aprove no painel)'; }
+    else if (v.modo === 'dicionario' && temDicionario(cat.id) && !this.ehLivre(cat.id)) { r.status = 'pendente'; r.motivo = 'não reconhecida (aprove no painel)'; }
     else { r.motivo = temDicionario(cat.id) ? 'não está no dicionário' : ''; }
     return r;
+  }
+
+  // palavra fora da lista que várias pessoas diferentes mandaram: o chat "aprova" sozinho
+  aprovarPeloChat(r, novas) {
+    const votos = Number(this.cfg.validacao.votosChat || 0);
+    if (!votos) return;
+    const iguais = this.respostas.filter((x) => x.catId === r.catId && x.norm === r.norm && x.status === 'pendente' && !x.manual);
+    if (new Set(iguais.map((x) => x.jogadorId)).size < votos) return;
+    for (const x of iguais) {
+      if (this.respostas.some((y) => y.jogadorId === x.jogadorId && y.catId === x.catId && y.status === 'valida')) continue;
+      x.status = 'valida';
+      x.motivo = 'aceita pelo chat';
+      if (x !== r && !novas.includes(x)) {
+        this.addFeed({ tipo: 'resposta', nome: x.nome, foto: x.foto, itens: [{ cat: this.nomeCat(x.catId), palavra: x.palavra, status: 'valida' }] });
+      }
+    }
   }
 
   // ação do painel: aprovar/recusar resposta
@@ -490,7 +511,9 @@ export class Jogo extends Emissor {
   trocarCategoria() {
     if (this.fase !== 'jogando' && this.fase !== 'pausado') return false;
     const atual = this.catAtual();
-    const ativas = this.cfg.categorias.filter((c) => c.ativa && !this.categorias.some((x) => x.id === c.id));
+    let ativas = this.cfg.categorias.filter((c) => c.ativa && !this.categorias.some((x) => x.id === c.id));
+    const comLetra = ativas.filter((c) => c.livre || !letrasComRespostas(c.id, 5) || letrasComRespostas(c.id, 5).includes(this.letra));
+    if (comLetra.length) ativas = comLetra;
     if (!ativas.length) return false;
     const nova = sortear(ativas);
     if (atual) atual.trocada = true;
@@ -500,6 +523,8 @@ export class Jogo extends Emissor {
     this.mudou();
     return true;
   }
+
+  ehLivre(catId) { return !!this.cfg.categorias.find((c) => c.id === catId)?.livre; }
 
   catAtual() {
     const ativas = this.categorias.filter((c) => !c.eliminada && !c.trocada);

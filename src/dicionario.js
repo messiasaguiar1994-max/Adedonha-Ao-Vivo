@@ -4,6 +4,7 @@
 // Palavras aprovadas com o botão 📖 do painel ficam guardadas no "dicionário extra".
 
 import { NOMES_IBGE } from './nomes-ibge.js';
+import { LISTAS } from './listas.js';
 
 const L = (s) => s.split('|').map((x) => x.trim()).filter(Boolean);
 
@@ -33,6 +34,7 @@ export function normalizar(s) {
 
 let armazenamento = { ler: (_k, p) => p, gravar: () => {} };
 let conjuntos = {};
+let porLetra = {};
 
 function montar() {
   const extra = armazenamento.ler('dicionario-extra', {}) || {};
@@ -43,6 +45,18 @@ function montar() {
   }
   // nomes de pessoas: lista do IBGE (milhares de nomes registrados no Brasil)
   for (const n of NOMES_IBGE.split('|')) conjuntos.nome.add(n);
+  // listas grandes (cidades do IBGE, países, animais, frutas, plantas, comidas, objetos, times)
+  for (const [id, txt] of Object.entries(LISTAS)) {
+    conjuntos[id] = conjuntos[id] || new Set();
+    for (const p of txt.split('|')) conjuntos[id].add(normalizar(p));
+  }
+  // índice por letra (para sortear só letras que têm respostas e para a busca aproximada)
+  porLetra = {};
+  for (const [id, set] of Object.entries(conjuntos)) {
+    const m = {};
+    for (const w of set) (m[w[0]] = m[w[0]] || []).push(w);
+    porLetra[id] = m;
+  }
 }
 montar();
 
@@ -51,19 +65,60 @@ export function usarArmazenamento(arm) {
   montar();
 }
 
+// distância de edição (quantas letras trocar/tirar/pôr para virar a outra palavra)
+function distancia(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let ant = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let menor = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (cur[j] < menor) menor = cur[j];
+    }
+    if (menor > max) return max + 1;
+    ant = cur;
+  }
+  return ant[b.length];
+}
+
+// variações comuns: plural, diminutivo, aumentativo
+function variacoes(n) {
+  const v = new Set([n]);
+  const troca = (fim, por) => { if (n.endsWith(fim) && n.length > fim.length + 2) v.add(n.slice(0, -fim.length) + por); };
+  troca('s', ''); troca('es', ''); troca('oes', 'ao'); troca('aes', 'ao'); troca('ais', 'al'); troca('eis', 'el'); troca('is', 'il'); troca('ns', 'm');
+  troca('zinho', ''); troca('zinha', ''); troca('inho', 'o'); troca('inha', 'a'); troca('inhos', 'o'); troca('inhas', 'a');
+  troca('zinho', 'o'); troca('zinha', 'a'); troca('ao', 'o'); troca('ona', 'a');
+  return [...v];
+}
+
 export function estaNoDicionario(catId, palavra) {
   const set = conjuntos[catId];
   if (!set) return false;
   const n = normalizar(palavra);
-  if (set.has(n)) return true;
-  // tolera plural simples (macacos -> macaco)
-  if (n.endsWith('s') && set.has(n.slice(0, -1))) return true;
+  if (!n) return false;
+  for (const x of variacoes(n)) if (set.has(x)) return true;
   // nome composto (Maria Clara, Ana Júlia, João de Deus): todas as partes precisam ser nomes
   if (catId === 'nome' && n.includes(' ')) {
     const partes = n.split(' ').filter((p) => !['de', 'da', 'do', 'dos', 'das', 'e'].includes(p));
     return partes.length > 0 && partes.every((p) => set.has(p));
   }
+  // pequeno erro de digitação (jacare / jacaré, rinoseronte / rinoceronte)
+  const semEsp = n.replace(/ /g, '');
+  if (semEsp.length >= 5) {
+    const max = semEsp.length >= 9 ? 2 : 1;
+    for (const w of porLetra[catId]?.[n[0]] || []) {
+      if (distancia(semEsp, w.replace(/ /g, ''), max) <= max) return true;
+    }
+  }
   return false;
+}
+
+// letras que têm pelo menos "minimo" respostas nesta categoria
+export function letrasComRespostas(catId, minimo = 5) {
+  const m = porLetra[catId];
+  if (!m) return null; // categoria sem lista: qualquer letra
+  return Object.keys(m).filter((l) => /[a-z]/.test(l) && m[l].length >= minimo).map((l) => l.toUpperCase());
 }
 
 // confere se parece uma palavra de verdade (barra coisas como "Mdkdkdkd", "asdfgh")
@@ -92,5 +147,5 @@ export function adicionarAoDicionario(catId, palavra) {
 
 // Lista usada pelo simulador (bots) para gerar respostas de teste
 export function palavrasDe(catId) {
-  return BASE[catId] || [];
+  return BASE[catId] || (LISTAS[catId] ? LISTAS[catId].split('|') : []);
 }

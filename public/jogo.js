@@ -252,7 +252,7 @@
   }
 
   // ---------- frases da voz ----------
-  const FRASE = { nome: 'um nome', animal: 'um animal', cidade: 'uma cidade', pais: 'um país', comida: 'uma comida', fruta: 'uma fruta', objeto: 'um objeto', profissao: 'uma profissão', filme: 'um filme ou série', celebridade: 'uma celebridade' };
+  const FRASE = { time: 'um time de futebol', planta: 'uma planta', nome: 'um nome', animal: 'um animal', cidade: 'uma cidade', pais: 'um país', comida: 'uma comida', fruta: 'uma fruta', objeto: 'um objeto', profissao: 'uma profissão', filme: 'um filme ou série', celebridade: 'uma celebridade' };
   const fraseCat = (ev) => ev.fala || FRASE[ev.catId] || `categoria ${ev.categoria || ''}`;
   const nomeFalado = (n) => String(n || '').replace(/[_.]/g, ' ').replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/)[0] || '';
 
