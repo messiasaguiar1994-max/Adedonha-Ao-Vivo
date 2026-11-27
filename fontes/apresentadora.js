@@ -1,8 +1,7 @@
-// Apresentador 3D da Adedonha: o passarinho (Cartoon Bird, de assetfactory no Sketchfab).
-// O modelo não tem esqueleto: separamos bico, asas e olhos por código e animamos cada peça.
-// - Fica pequeno em cima do quadro da letra, dançando e acenando com a asa.
-// - Cresce só enquanto a voz fala; depois volta para o cantinho.
-// - Quando alguém segue a live, passa um balão com a foto da pessoa e ela voa 1 segundo segurando o barbante.
+// Apresentadora 3D da Adedonha: a menina ("normal girl", de Ser/msmangekyou49 no Sketchfab), com esqueleto e danças do Mixamo.
+// - Fica pequena em cima do quadro da letra, dançando e acenando.
+// - Cresce só enquanto a voz fala (gesticulando e mexendo a boca); depois volta para o cantinho.
+// - Quando alguém segue a live, passa um balão com a foto da pessoa e ela segura o barbante e voa 1 segundo.
 // Este arquivo é empacotado (npm run build) em public/apresentadora.js.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -12,8 +11,8 @@ const ALTURA = 1920;
 
 // posições na tela do jogo (em pixels do palco 1080x1920); y = onde ficam os pés
 const POSES = {
-  canto: { x: 250, y: 268, altura: 230 },   // em cima do quadro da letra
-  grande: { x: 800, y: 1040, altura: 640 }, // falando
+  canto: { x: 250, y: 268, altura: 250 },   // em cima do quadro da letra
+  grande: { x: 860, y: 1890, altura: 660 }, // falando
 };
 
 const params = new URLSearchParams(location.search);
@@ -47,7 +46,8 @@ function iniciar() {
   const cena = new THREE.Scene();
   // câmera "plana": 1 unidade = 1 pixel do palco (y para baixo é negativo)
   const camera = new THREE.OrthographicCamera(0, LARGURA, 0, -ALTURA, -5000, 5000);
-  cena.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.2));
+  cena.add(new THREE.HemisphereLight(0xffffff, 0x777777, 2.0));
+  const sol = new THREE.DirectionalLight(0xffffff, 1.1); sol.position.set(300, 400, 1000); cena.add(sol);
 
   const estado = {
     pronta: false,
@@ -59,91 +59,69 @@ function iniciar() {
     t: 0,
   };
 
-  const pecas = { asaE: null, asaD: null, bicoCima: null, bicoBaixo: null, olhos: [], corpo: null };
   let alturaModelo = 1; let baseModelo = 0;
-  const caminhoModelo = (document.querySelector('script[src*="apresentadora.js"]')?.getAttribute('src') || '/apresentadora.js').replace(/apresentadora\.js.*$/, 'modelos/passarinho.glb');
+  const caminhoModelo = (document.querySelector('script[src*="apresentadora.js"]')?.getAttribute('src') || '/apresentadora.js').replace(/apresentadora\.js.*$/, 'modelos/menina.glb');
+  const ossos = {};
+  let mixer = null; const acoes = {}; let rosto = null; let iBoca = -1;
+  let atual = null; let trocaEm = 0; let lado = -1;
 
-  // separa a malha em "ilhas" (peças soltas) e agrupa em corpo, asas, bico e olhos
-  function separarPecas(malha) {
-    const geo = malha.geometry;
-    const pos = geo.attributes.position;
-    const idx = geo.index ? geo.index.array : [...Array(pos.count).keys()];
-    const pai = new Int32Array(pos.count).map((_, i) => i);
-    const raizDe = (x) => { while (pai[x] !== x) { pai[x] = pai[pai[x]]; x = pai[x]; } return x; };
-    for (let i = 0; i < idx.length; i += 3) {
-      const a = raizDe(idx[i]); const b = raizDe(idx[i + 1]); const c = raizDe(idx[i + 2]);
-      pai[a] = c; pai[b] = c;
-    }
-    const ilhas = new Map();
-    for (let i = 0; i < idx.length; i += 3) {
-      const r = raizDe(idx[i]);
-      if (!ilhas.has(r)) ilhas.set(r, { tris: [], min: [1e9, 1e9, 1e9], max: [-1e9, -1e9, -1e9] });
-      const ilha = ilhas.get(r);
-      for (let k = 0; k < 3; k++) {
-        const v = idx[i + k];
-        ilha.tris.push(v);
-        for (let e = 0; e < 3; e++) { const val = pos.array[v * 3 + e]; if (val < ilha.min[e]) ilha.min[e] = val; if (val > ilha.max[e]) ilha.max[e] = val; }
-      }
-    }
-    // no arquivo: x = lados, y = para trás (bico em y negativo), z = para cima
-    const grupos = { corpo: [], asaE: [], asaD: [], bicoCima: [], bicoBaixo: [], olhos: [] };
-    const bico = [];
-    for (const ilha of ilhas.values()) {
-      const c = [0, 1, 2].map((e) => (ilha.min[e] + ilha.max[e]) / 2);
-      if (c[0] > 0.16 && c[2] < -0.38 && c[2] > -0.75) grupos.asaD.push(ilha);
-      else if (c[0] < -0.16 && c[2] < -0.38 && c[2] > -0.75) grupos.asaE.push(ilha);
-      else if (c[1] < -0.12 && Math.abs(c[0]) < 0.12 && c[2] < -0.22 && c[2] > -0.42) bico.push({ ilha, z: c[2] });
-      else if (Math.abs(c[0]) > 0.05 && Math.abs(c[0]) < 0.24 && c[2] > -0.33 && c[2] < -0.1 && c[1] < 0.02) grupos.olhos.push(ilha);
-      else grupos.corpo.push(ilha);
-    }
-    if (bico.length) {
-      const zm = bico.reduce((s2, b2) => s2 + b2.z, 0) / bico.length;
-      for (const b2 of bico) (b2.z >= zm ? grupos.bicoCima : grupos.bicoBaixo).push(b2.ilha);
-    }
-    const criar = (lista, pivo) => {
-      if (!lista.length) return null;
-      const g2 = new THREE.BufferGeometry();
-      for (const nome of Object.keys(geo.attributes)) g2.setAttribute(nome, geo.attributes[nome]);
-      g2.setIndex(lista.flatMap((i2) => i2.tris));
-      const m = new THREE.Mesh(g2, malha.material);
-      m.frustumCulled = false;
-      const p2 = new THREE.Group();
-      p2.position.set(...pivo);
-      m.position.set(-pivo[0], -pivo[1], -pivo[2]);
-      p2.add(m);
-      malha.parent.add(p2);
-      return p2;
-    };
-    const centroDe = (lista) => { const mn = [1e9, 1e9, 1e9]; const mx = [-1e9, -1e9, -1e9]; for (const i2 of lista) for (let e = 0; e < 3; e++) { mn[e] = Math.min(mn[e], i2.min[e]); mx[e] = Math.max(mx[e], i2.max[e]); } return { mn, mx }; };
-    const ombro = (lista, lado) => { if (!lista.length) return [0, 0, 0]; const { mn, mx } = centroDe(lista); return [lado < 0 ? mx[0] : mn[0], (mn[1] + mx[1]) / 2, mx[2]]; };
-    const dobra = (lista) => { if (!lista.length) return [0, 0, 0]; const { mn, mx } = centroDe(lista); return [0, mx[1], (mn[2] + mx[2]) / 2]; };
-    pecas.corpo = criar(grupos.corpo, [0, 0, 0]);
-    pecas.asaE = criar(grupos.asaE, ombro(grupos.asaE, -1));
-    pecas.asaD = criar(grupos.asaD, ombro(grupos.asaD, 1));
-    pecas.bicoCima = criar(grupos.bicoCima, dobra(grupos.bicoCima));
-    pecas.bicoBaixo = criar(grupos.bicoBaixo, dobra(grupos.bicoBaixo));
-    pecas.olhos = grupos.olhos.map((ilha) => { const { mn, mx } = centroDe([ilha]); return criar([ilha], [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2]); });
-    malha.visible = false;
+  function tocar(nome, fade = 0.45) {
+    const a = acoes[nome];
+    if (!a || atual === a) return;
+    a.reset().setEffectiveWeight(1).fadeIn(fade).play();
+    if (atual) atual.fadeOut(fade);
+    atual = a;
+    trocaEm = performance.now() + a.getClip().duration * 1000 * (nome.startsWith('danca') ? 1 : 2);
   }
 
   new GLTFLoader().load(caminhoModelo, (gltf) => {
     const modelo = gltf.scene;
-    let malha = null;
-    modelo.traverse((o) => { if (o.isMesh && !malha) malha = o; });
-    if (malha) separarPecas(malha);
+    modelo.traverse((o) => {
+      if (o.isBone) ossos[o.name.replace('mixamorig', '')] = o;
+      if (o.isMesh) {
+        o.frustumCulled = false;
+        if (o.morphTargetDictionary && o.morphTargetDictionary.boca !== undefined) { rosto = o; iBoca = o.morphTargetDictionary.boca; }
+      }
+    });
     const raiz = new THREE.Group();
     raiz.add(modelo);
     cena.add(raiz);
-    modelo.updateMatrixWorld(true);
-    const caixa = new THREE.Box3().setFromObject(modelo);
-    alturaModelo = caixa.max.y - caixa.min.y;
+    mixer = new THREE.AnimationMixer(modelo);
+    for (const c of gltf.animations) { const a = mixer.clipAction(c); a.setLoop(THREE.LoopRepeat); acoes[c.name] = a; }
+    // mede a altura em pé (pose da fala) para encaixar no quadro da letra
+    const medir = acoes.fala2 || Object.values(acoes)[0];
+    medir.play(); mixer.update(0); modelo.updateMatrixWorld(true);
+    const caixa = new THREE.Box3();
+    modelo.traverse((o) => { if (o.isSkinnedMesh) { o.computeBoundingBox(); caixa.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); } });
+    medir.stop();
+    alturaModelo = (caixa.max.y - caixa.min.y) || 1;
     baseModelo = caixa.min.y;
     modelo.position.x = -(caixa.min.x + caixa.max.x) / 2;
     modelo.position.z = -(caixa.min.z + caixa.max.z) / 2;
+    if (ossos.RightHand) { modelo.updateMatrixWorld(true); lado = Math.sign(ossos.RightHand.getWorldPosition(new THREE.Vector3()).x - ossos.Hips.getWorldPosition(new THREE.Vector3()).x) || -1; }
+    tocar('danca1', 0);
     estado.raiz = raiz;
+    estado.modelo = modelo;
     estado.pronta = true;
-    window.__passarinho = { pecas, estado };
-  }, undefined, (e) => console.warn('[apresentador] não carregou o modelo', e));
+    window.__apresentadora = { ossos, acoes, estado };
+  }, undefined, (e) => console.warn('[apresentadora] não carregou o modelo', e));
+
+  // gira um osso para que ele aponte numa direção (relativa ao corpo dela), misturando com a animação
+  const _a = new THREE.Vector3(); const _b = new THREE.Vector3(); const _q = new THREE.Quaternion(); const _qw = new THREE.Quaternion(); const _qp = new THREE.Quaternion(); const _qr = new THREE.Quaternion();
+  function apontar(osso, filho, dir, peso) {
+    if (!osso || !filho || peso <= 0) return;
+    osso.updateWorldMatrix(true, false); filho.updateWorldMatrix(false, false);
+    osso.getWorldPosition(_a); filho.getWorldPosition(_b);
+    const agoraDir = _b.sub(_a).normalize();
+    estado.modelo.getWorldQuaternion(_qr);
+    const alvoDir = dir.clone().normalize().applyQuaternion(_qr);
+    _q.setFromUnitVectors(agoraDir, alvoDir);
+    osso.getWorldQuaternion(_qw);
+    osso.parent.getWorldQuaternion(_qp).invert();
+    const novo = _qp.multiply(_q).multiply(_qw);
+    osso.quaternion.slerp(novo, Math.min(1, peso));
+    osso.updateWorldMatrix(false, true);
+  }
 
   // ----- ligação com o jogo -----
   window.addEventListener('voz-inicio', () => { estado.falando = true; });
@@ -152,7 +130,7 @@ function iniciar() {
     estado.ligada = ev.detail?.apresentadora !== false;
     canvas.style.display = estado.ligada ? '' : 'none';
   });
-  // nos anúncios do jogo ele "fala" (cresce e mexe o bico), mesmo se a voz demorar ou falhar
+  // nos anúncios do jogo ela "fala" (cresce e mexe a boca), mesmo se a voz demorar ou falhar
   const FALAS = { valendo: 4500, stop: 2500, resposta_certa: 3500, melhor_rodada: 6000, nova_letra: 3000, nova_categoria: 3500, nova_pergunta: 3500, desafio: 4000, campeao: 4000, teste_voz: 6000 };
   window.addEventListener('jogo-evento', (ev) => {
     const e = ev.detail || {};
@@ -206,7 +184,7 @@ function iniciar() {
       // no meio do caminho ela segura o barbante e voa junto por ~1 segundo
       if (!pegou && p2.y < 1250 && estado.pronta && estado.ligada && !estado.falando) {
         pegou = true;
-        estado.voando = { posicao: () => { const q = pos(performance.now()); return { x: q.x + 115, y: q.y + 280 + 268 + 130 }; }, ate: agora + 1100 };
+        estado.voando = { posicao: () => { const q = pos(performance.now()); return { x: q.x + 115, y: q.y + 470 }; }, ate: agora + 1100 };
       }
       if (p2.k < 1) requestAnimationFrame(quadro);
       else { el.remove(); proximoBalao(); }
@@ -231,38 +209,45 @@ function iniciar() {
     if (!voando) estado.voando = null;
 
     const t = estado.t;
-    // bico: abre com o volume da voz (voz natural) ou num "tagarelar" quando é a voz do celular
+    // corpo: dança pequena no quadro, gesticula falando (alterna os 2 movimentos de cada)
+    if (grande && !voando) { if (!atual || !atual.getClip().name.startsWith('fala') || agora > trocaEm) tocar(atual && atual.getClip().name === 'fala1' ? 'fala2' : 'fala1', 0.35); }
+    else if (!atual || !atual.getClip().name.startsWith('danca') || agora > trocaEm) tocar(atual && atual.getClip().name === 'danca1' ? 'danca2' : 'danca1');
+    mixer.update(dt);
+    estado.modelo.updateMatrixWorld(true);
+
+    // boca: abre com o volume da voz (voz natural) ou num "tagarelar" quando é a voz do celular
     let boca = 0;
     if (estado.falando || anunciando) {
       const nivel = typeof window.__nivelVoz === 'function' ? window.__nivelVoz() : null;
       boca = nivel != null ? Math.min(1, nivel * 1.4) : Math.max(0, Math.sin(t * 17) * 0.6 + Math.sin(t * 7.3) * 0.4);
     }
     estado.boca = (estado.boca || 0) + (boca - (estado.boca || 0)) * Math.min(1, dt * 18);
-    if (pecas.bicoBaixo) pecas.bicoBaixo.rotation.x = -estado.boca * 0.55;
-    if (pecas.bicoCima) pecas.bicoCima.rotation.x = estado.boca * 0.12;
+    if (rosto) rosto.morphTargetInfluences[iBoca] = estado.boca * 0.85;
 
-    // asas: batem devagar dançando, gesticulam falando, batem rápido voando; aceno a cada ~7 s
+    // braço direito: aceno a cada ~7 s quando está dançando; erguido segurando o barbante quando voa
     const ciclo = t % 7;
     const aceno = !grande && !voando && ciclo > 4.5 ? Math.min(1, (ciclo - 4.5) * 3, (7 - ciclo) * 3) : 0;
-    let abreE; let abreD;
-    if (voando) { abreE = abreD = 0.6 + Math.sin(t * 28) * 0.6; }
-    else if (grande) { abreE = 0.25 + Math.sin(t * 3.1) * 0.25; abreD = 0.25 + Math.sin(t * 3.1 + 1.5) * 0.25; }
-    else { abreE = 0.15 + Math.sin(t * 8.4) * 0.15; abreD = 0.15 + Math.sin(t * 8.4) * 0.15; }
-    abreD = abreD * (1 - aceno) + (1.6 + Math.sin(t * 12) * 0.35) * aceno; // levanta a asa e balança
-    if (pecas.asaE) pecas.asaE.rotation.y = -abreE;
-    if (pecas.asaD) pecas.asaD.rotation.y = abreD;
-
-    // piscar
-    const piscando = (t % 3.3) < 0.12;
-    for (const o of pecas.olhos) if (o) o.scale.z = piscando ? 0.15 : 1;
-
-    // corpo: balanço da dancinha
-    if (pecas.corpo) pecas.corpo.rotation.y = grande ? 0 : Math.sin(t * 4.2) * 0.08;
+    estado.segura = (estado.segura || 0) + ((voando ? 1 : 0) - (estado.segura || 0)) * Math.min(1, dt * 10);
+    if (aceno > 0) {
+      apontar(ossos.RightArm, ossos.RightForeArm, new THREE.Vector3(lado * 0.75, 0.65, 0.2), aceno);
+      apontar(ossos.RightForeArm, ossos.RightHand, new THREE.Vector3(lado * (0.15 + Math.sin(t * 10) * 0.45), 1, 0.25), aceno);
+    }
+    if (estado.segura > 0.01) {
+      apontar(ossos.RightArm, ossos.RightForeArm, new THREE.Vector3(lado * 0.12, 1, 0.05), estado.segura);
+      apontar(ossos.RightForeArm, ossos.RightHand, new THREE.Vector3(lado * 0.05, 1, 0.05), estado.segura);
+      // pernas balançando no ar
+      apontar(ossos.LeftUpLeg, ossos.LeftLeg, new THREE.Vector3(0.1 + Math.sin(t * 9) * 0.25, -1, 0.2), estado.segura * 0.8);
+      apontar(ossos.RightUpLeg, ossos.RightLeg, new THREE.Vector3(-0.1 - Math.sin(t * 9) * 0.25, -1, 0.2), estado.segura * 0.8);
+    }
 
     // posição na tela (desliza suave entre cantinho, grande e voando)
     if (voando) {
       const p = estado.voando.posicao();
-      alvo.x = p.x; alvo.y = p.y + 40; alvo.altura = POSES.canto.altura * 1.1;
+      alvo.altura = POSES.canto.altura * 1.1;
+      // onde está a mão agora em relação aos pés → coloca a mão no barbante
+      let dx = 0; let dy = alvo.altura * 1.2;
+      if (ossos.RightHand) { ossos.RightHand.getWorldPosition(_a); dx = _a.x - estado.raiz.position.x; dy = (_a.y - estado.raiz.position.y) - baseModelo * estado.raiz.scale.x; }
+      alvo.x = p.x - dx; alvo.y = p.y + dy;
     } else {
       const pose = grande ? POSES.grande : POSES.canto;
       alvo.x = pose.x; alvo.y = pose.y; alvo.altura = pose.altura;
@@ -271,13 +256,12 @@ function iniciar() {
     estado.x += (alvo.x - estado.x) * suave;
     estado.y += (alvo.y - estado.y) * suave;
     estado.altura += (alvo.altura - estado.altura) * suave;
-    const pulinho = !grande && !voando ? Math.abs(Math.sin(estado.t * 4.2)) * 14 : 0;
+    const pulinho = 0;
 
     const esc = estado.altura / alturaModelo;
     estado.raiz.scale.setScalar(esc);
     estado.raiz.position.set(estado.x, -(estado.y - pulinho) - baseModelo * esc, 0);
-    estado.raiz.rotation.y = grande ? -0.3 + Math.sin(estado.t * 0.9) * 0.12 : Math.sin(estado.t * 1.3) * 0.35;
-    estado.raiz.rotation.z = !grande && !voando ? Math.sin(estado.t * 4.2) * 0.06 : 0;
+    estado.raiz.rotation.y = voando ? 0 : grande ? -0.35 + Math.sin(estado.t * 0.9) * 0.1 : Math.sin(estado.t * 0.7) * 0.3;
     renderer.render(cena, camera);
   }
   requestAnimationFrame(quadro);
