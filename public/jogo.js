@@ -161,9 +161,9 @@
     if (pg.dataset.h !== htmlP) { pg.innerHTML = htmlP; pg.dataset.h = htmlP; pg.className = `${tipo || ''} ${txtP ? 'ativo' : ''}`; }
     const n = e.parede.length;
     $('#contRespostas').textContent = e.fase === 'sorteio' ? '' : n ? `✅ ${n} ${n === 1 ? 'acertou' : 'acertaram'}` : '';
-    $('#parede').style.maxHeight = txtP ? '250px' : '';
+    $('#parede').style.maxHeight = txtP ? '780px' : '';
     // cartões: foto, nome e embaixo (pequeno) a palavra que a pessoa comentou; quem mandou presente fica maior
-    const lista = [...e.parede].sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0)).slice(0, 10);
+    const lista = [...e.parede].sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0)).slice(0, 20);
     const html = lista.map((r) => `<div class="carta ${r.unica ? 'unica' : ''} ${r.destaque ? 'destaque' : ''}">${avatar(r.nome, r.foto)}<div class="cNome">${esc(r.nome)}</div><div class="cPal">${esc(r.palavra)}</div></div>`).join('');
     const p = $('#parede');
     if (p.dataset.h !== html) { p.innerHTML = html; p.dataset.h = html; }
@@ -171,7 +171,7 @@
 
   function desenharRankingVivo(e) {
     const html = e.ranking.length
-      ? e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.destaque ? 'destaque' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('')
+      ? e.ranking.slice(0, e.ranking.slice(0, 5).some((j) => j.destaque) ? 4 : 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.destaque ? 'destaque' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('')
       : '<div class="vazioRV">Placar zerado</div>';
     const el = $('#listaRV');
     if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
@@ -186,7 +186,7 @@
     $('#podioRodada').innerHTML = ordem.length
       ? ordem.map((t, i) => {
         const pos = top.indexOf(t);
-        return `<div class="pod ${pos === 0 ? 'p1' : ''}" style="animation-delay:${i * 0.15}s">${avatar(t.nome, t.foto)}<div class="nome">${medalhas[pos]} ${esc(t.nome)}</div><div class="pts">+${t.pts}</div></div>`;
+        return `<div class="pod ${pos === 0 ? 'p1' : ''} ${t.destaque ? 'destaque' : ''}" style="animation-delay:${i * 0.15}s">${avatar(t.nome, t.foto)}<div class="nome">${medalhas[pos]} ${esc(t.nome)}</div><div class="pts">+${t.pts}</div></div>`;
       }).join('')
       : '<div class="vazio">Ninguém pontuou nesta rodada 😅</div>';
     const nCat = Math.max(1, r.categorias.length);
@@ -210,7 +210,7 @@
 
   function desenharRanking(e) {
     const html = e.ranking.length
-      ? e.ranking.map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.eliminado ? 'elim' : ''}" style="animation-delay:${i * 0.07}s">
+      ? e.ranking.map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.eliminado ? 'elim' : ''} ${j.destaque ? 'destaque' : ''}" style="animation-delay:${i * 0.07}s">
           <div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div>
           ${e.modo === 'sobrevivencia' ? `<div class="vidas">${j.eliminado ? '☠️' : '❤️'.repeat(Math.max(0, Math.min(5, j.vidas)))}</div>` : ''}
           <div class="pts">${j.pontos}</div></div>`).join('')

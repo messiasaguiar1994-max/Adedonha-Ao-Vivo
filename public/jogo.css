@@ -261,3 +261,14 @@ body.comFundo #fundoMidia { display: block; }
 body.comFundo #palco { background: transparent !important; }
 body.comFundo .brilho { display: none; }
 #palco { z-index: 1; }
+
+/* durante a votação o ranking geral sai da tela: só os cartões de quem está respondendo */
+body.fase-sorteio #rankingVivo, body.fase-jogando #rankingVivo, body.fase-pausado #rankingVivo { display: none; }
+body.fase-sorteio #telaJogo, body.fase-jogando #telaJogo, body.fase-pausado #telaJogo { bottom: 40px; }
+#parede { max-height: 940px; }
+/* foto maior (75%) para quem mandou presente, em todo lugar */
+.pod.destaque .av, #telaResultado .pod.destaque .av { width: 112px; height: 112px; font-size: 50px; border-color: #ffd23f; box-shadow: 0 0 24px rgba(255,210,63,.6); }
+#listaRanking .linhaRank.destaque .av { width: 122px; height: 122px; font-size: 54px; border: 4px solid #ffd23f; }
+#rankingVivo { overflow: hidden; }
+#listaRV .linhaRank.destaque { padding-top: 2px; padding-bottom: 2px; }
+#listaRV .linhaRank.destaque .av { width: 100px; height: 100px; }

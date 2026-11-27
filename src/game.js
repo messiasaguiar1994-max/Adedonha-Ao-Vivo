@@ -510,7 +510,7 @@ export class Jogo extends Emissor {
     }
 
     const topRodada = Object.entries(rodadaPts)
-      .map(([id, pts]) => ({ id, pts, nome: this.jogadores.get(id)?.nome, foto: this.jogadores.get(id)?.foto }))
+      .map(([id, pts]) => ({ id, pts, nome: this.jogadores.get(id)?.nome, foto: this.jogadores.get(id)?.foto, destaque: this.temDestaque(this.jogadores.get(id)) }))
       .sort((a, b) => b.pts - a.pts)
       .slice(0, 5);
 
@@ -621,8 +621,10 @@ export class Jogo extends Emissor {
 
     const j = this.jogador(user);
     j.presentes = (j.presentes || 0) + (presente.diamantes || 0) * (presente.quantidade || 1);
-    // quem manda presente fica com a foto maior nesta rodada e na próxima
-    j.destaqueAte = Math.max(j.destaqueAte || 0, this.rodada + 1);
+    // quem manda presente fica com a foto maior por 2 rodadas (a atual e a próxima;
+    // se chegar entre uma rodada e outra, vale para as 2 próximas)
+    const emRodada = ['sorteio', 'jogando', 'pausado'].includes(this.fase);
+    j.destaqueAte = Math.max(j.destaqueAte || 0, this.rodada + (emRodada ? 1 : 2));
 
     if (!this.presentesLigados()) { this.mudou(); return registro; }
 
@@ -716,7 +718,10 @@ export class Jogo extends Emissor {
     return { id: j.id, nome: j.nome, foto: j.foto, pontos: j.pontos, pontosRodada: j.pontosRodada, vidas: j.vidas, eliminado: j.eliminado, destaque: this.temDestaque(j) };
   }
 
-  temDestaque(j) { return !!j && (j.destaqueAte || 0) >= this.rodada && this.rodada > 0; }
+  temDestaque(j) {
+    if (!j) return false;
+    return (j.destaqueAte || 0) >= Math.max(1, this.rodada);
+  }
 
   ranking(n = 10) {
     return [...this.jogadores.values()]
