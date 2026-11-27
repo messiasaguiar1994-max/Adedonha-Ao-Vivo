@@ -197,7 +197,7 @@
       .sort((a, b) => b.pontos - a.pontos);
     const n = todos.length;
     const tam = n <= 8 ? 'g' : n <= 18 ? 'm' : n <= 30 ? 'p' : 'pp';
-    const mostrar = todos.slice(0, 60);
+    const mostrar = todos.slice(0, n > 41 ? 40 : 41); // o que cabe na tela; o resto vira "+N"
     const resto = n - mostrar.length;
     $('#todosVotos').className = `votos-${tam}`;
     $('#todosVotos').innerHTML = n
