@@ -95,7 +95,7 @@
     $('#tabCategorias tbody').innerHTML = cfg.categorias.map((c, i) => `
       <tr data-i="${i}">
         <td><input type="checkbox" data-c="ativa" ${c.ativa ? 'checked' : ''}></td>
-        <td><input type="checkbox" data-c="livre" ${c.livre ? 'checked' : ''}></td>
+        <td>${c.tipo ? '<small class="dica">pergunta</small>' : `<input type="checkbox" data-c="livre" ${c.livre ? 'checked' : ''}>`}</td>
         <td><input type="text" data-c="nome" value="${esc(c.nome)}"></td>
         <td><input type="text" data-c="fala" value="${esc(c.fala || '')}" placeholder="automático"></td>
         <td><input type="text" data-c="apelidos" value="${esc((c.apelidos || []).join(', '))}"></td>

@@ -18,6 +18,14 @@ export function criarSimulador(jogo, mandarChat) {
       const nome = NOMES_BOT[Math.floor(Math.random() * this.quantidade)];
       const cats = jogo.catAtual() ? [jogo.catAtual()] : [];
       if (!cats.length) return;
+      const perg = cats[0].pergunta;
+      if (perg) {
+        // rodada de pergunta: às vezes acerta, às vezes erra
+        const certo = Math.random() < 0.55;
+        const txt = certo ? perg.resposta : perg.tipo === 'conta' ? String(Number(perg.resposta) + (Math.random() < 0.5 ? 1 : -2) * Math.ceil(Math.random() * 5)) : 'sei lá';
+        mandarChat({ id: nome.toLowerCase(), nome, foto: '' }, txt);
+        return;
+      }
       const L = normalizar(jogo.letra);
       const escolher = (c) => {
         const opcoes = palavrasDe(c.id).filter((p) => normalizar(p).startsWith(L));

@@ -229,3 +229,12 @@ body.fase-ranking #rankingVivo, body.fase-fim #rankingVivo { display: none; }
 #telaResultado { bottom: 560px; }
 #telaResultado .tituloSecao { font-size: 56px; margin-bottom: 10px; }
 #telaResultado .pod { padding: 10px; } #telaResultado .pod .av { width: 64px; height: 64px; font-size: 30px; } #telaResultado .pod .pts { font-size: 44px; }
+
+/* rodadas de pergunta (continha e ditado) */
+#pergunta { display: none; margin: 18px auto 0; width: 920px; padding: 22px 30px; border-radius: 30px; text-align: center;
+  background: #fff8dc; color: var(--roxo); font-family: var(--fonteTexto); font-weight: 800; font-size: 54px; line-height: 1.15;
+  box-shadow: 0 10px 0 rgba(0,0,0,.25); animation: entrar .5s cubic-bezier(.2,1.6,.4,1); }
+#pergunta.conta { font-size: 92px; letter-spacing: 2px; }
+#pergunta.ativo { display: block; }
+#pergunta .lacuna { color: var(--rosa); }
+.resposta-certa { text-align: center; font-weight: 800; font-size: 40px; margin: 0 0 10px; padding: 10px 20px; border-radius: 20px; background: rgba(61,220,132,.25); border: 3px solid var(--verde); }

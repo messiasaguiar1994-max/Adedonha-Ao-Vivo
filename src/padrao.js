@@ -29,7 +29,7 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 6,
+  versaoConfig: 7,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
 
@@ -42,6 +42,8 @@ export const PADRAO = {
     { id: 'pais', nome: 'País', apelidos: ['pais', 'país', 'paises'], ativa: true, fala: 'um país' },
     { id: 'planta', nome: 'Planta', apelidos: ['planta', 'plantas', 'flor', 'arvore'], ativa: true, fala: 'uma planta' },
     { id: 'animal', nome: 'Animal', apelidos: ['animal', 'animais', 'bicho'], ativa: true, fala: 'um animal' },
+    { id: 'conta', nome: 'Continha', tipo: 'conta', apelidos: [], ativa: true },
+    { id: 'ditado', nome: 'Ditado popular', tipo: 'ditado', apelidos: [], ativa: true },
     { id: 'profissao', nome: 'Profissão', apelidos: ['profissao', 'profissão', 'prof', 'trabalho'], ativa: false, fala: 'uma profissão' },
     { id: 'nome', nome: 'Nome', apelidos: ['nome', 'nomes', 'pessoa'], ativa: false, fala: 'um nome' },
     { id: 'filme', nome: 'Filme ou série', apelidos: ['filme', 'serie', 'série', 'filmes'], ativa: false, livre: true, fala: 'um filme ou série' },
@@ -68,6 +70,8 @@ export const PADRAO = {
     invalida: 0,
     completou: 10,        // respondeu todas as categorias da rodada
     primeiro: 3,          // primeiro a responder certo cada categoria
+    rapidez: [15, 12, 10, 8, 6], // continha/ditado: pontos do 1º, 2º, 3º... a acertar
+    acertouPergunta: 5,   // continha/ditado: quem acertou depois do 5º
   },
 
   // ---- Sobrevivência ----
@@ -152,6 +156,13 @@ export function migrar(cfg) {
     const extras = (cfg.categorias || []).filter((c) => !novas.some((n) => n.id === c.id));
     cfg.categorias = [...novas, ...extras.map((c) => ({ ...c, ativa: false }))];
     cfg.validacao.votosChat = 3;
+  }
+  if (cfg.versaoConfig < 7) {
+    cfg.versaoConfig = 7;
+    // novas categorias de pergunta: continha e ditado popular
+    for (const id of ['conta', 'ditado']) {
+      if (!cfg.categorias.some((c) => c.id === id)) cfg.categorias.push(structuredClone(PADRAO.categorias.find((c) => c.id === id)));
+    }
   }
   return cfg;
 }

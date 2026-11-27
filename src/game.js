@@ -1,5 +1,6 @@
 // Motor da Adedonha: fases da rodada, respostas, pontuação, modos, presentes e comandos.
 import { Emissor } from './emissor.js';
+import { novaPergunta, letraDaPergunta, confereResposta } from './perguntas.js';
 import { interpretarMensagem, lerComando } from './parser.js';
 import { normalizar, estaNoDicionario, temDicionario, pareceePalavra, letrasComRespostas } from './dicionario.js';
 
@@ -124,7 +125,7 @@ export class Jogo extends Emissor {
     const qtd = 1; // uma categoria por rodada
     const semRepetir = ativas.length > 1 ? ativas.filter((c) => c.id !== this.ultimaCat) : ativas;
     this.categorias = embaralhar(semRepetir).slice(0, qtd)
-      .map((c) => ({ id: c.id, nome: c.nome, apelidos: c.apelidos || [], eliminada: false }));
+      .map((c) => ({ id: c.id, nome: c.nome, apelidos: c.apelidos || [], eliminada: false, tipo: c.tipo || null }));
     this.ultimaCat = this.categorias[0].id;
     this.tempoTotal = (this.relampagoRodada ? this.cfg.relampago.tempo : this.cfg.tempoRodada) * 1000;
 
@@ -141,7 +142,12 @@ export class Jogo extends Emissor {
     this.pendentes.desafio = false;
     for (const j of this.jogadores.values()) { j.pontosRodada = 0; j.dobro = false; }
 
-    this.letra = this.sortearLetraNova();
+    const cat0 = this.categorias[0];
+    if (cat0.tipo) {
+      // rodada de pergunta (continha ou ditado)
+      cat0.pergunta = novaPergunta(cat0.tipo);
+      this.letra = letraDaPergunta(cat0.pergunta);
+    } else this.letra = this.sortearLetraNova();
     this.fase = 'sorteio';
     this.proximaEm = this.agora() + 3800;
     this.alerta('sorteio', { letra: this.letra });
@@ -155,7 +161,7 @@ export class Jogo extends Emissor {
     this.proximaEm = 0;
     const cat = this.catAtual();
     const cfgCat = cat && this.cfg.categorias.find((c) => c.id === cat.id);
-    this.alerta('valendo', { letra: this.letra, relampago: this.relampagoRodada, categoria: cat?.nome, catId: cat?.id, fala: cfgCat?.fala || '' });
+    this.alerta('valendo', { letra: this.letra, relampago: this.relampagoRodada, categoria: cat?.nome, catId: cat?.id, fala: cfgCat?.fala || '', pergunta: cat?.pergunta ? { falar: cat.pergunta.falar } : null });
     this.mudou();
   }
 
@@ -194,6 +200,8 @@ export class Jogo extends Emissor {
     this.aplicarSobrevivencia();
     this.historico.unshift({ rodada: this.rodada, letra: this.letra, jogadores: this.resultado.participantes });
     this.alerta('stop', {});
+    const perg = this.categorias.filter((c) => c.pergunta).pop()?.pergunta;
+    if (perg) this.alerta('resposta_certa', { qual: perg.tipo, revelar: perg.revelar, resposta: perg.resposta });
     const melhor = this.resultado?.topRodada?.find((t) => t.pts > 0);
     if (melhor) this.alerta('melhor_rodada', { nome: melhor.nome });
     this.proximaEm = this.agora() + this.cfg.tempoResultado * 1000;
@@ -273,6 +281,7 @@ export class Jogo extends Emissor {
 
     const atual = this.catAtual();
     if (!atual) return null;
+    if (atual.pergunta) return this.receberResposta(user, texto, atual);
     const ativas = [atual];
     const achados = interpretarMensagem(texto, ativas, this.letra || 'A');
     if (!achados.length) return null; // conversa normal do chat
@@ -322,6 +331,42 @@ export class Jogo extends Emissor {
       this.mudou();
     }
     return { respostas: novas.length };
+  }
+
+  // rodadas de pergunta: vale a primeira resposta certa de cada pessoa
+  receberResposta(user, texto, cat) {
+    const c = confereResposta(cat.pergunta, texto);
+    if (!c.tentativa) return null;
+    if (this.fase !== 'jogando') {
+      if (this.fase === 'pausado') this.rejeitar(user, texto, 'cronômetro pausado');
+      else if (this.fase !== 'sorteio') this.rejeitar(user, texto, 'fora do tempo');
+      return null;
+    }
+    const idUser = String(user.id || user.nome).toLowerCase();
+    if (this.cfg.modo === 'sobrevivencia' && this.cfg.sobrevivencia.entradaSoNaPrimeira && this.rodada > 1 && !this.jogadores.has(idUser)) {
+      this.rejeitar(user, texto, 'entrou depois da 1ª rodada (sobrevivência)');
+      return null;
+    }
+    const j = this.jogador(user);
+    if (j.banido || (this.cfg.modo === 'sobrevivencia' && j.eliminado)) return null;
+    const minhas = this.respostas.filter((r) => r.jogadorId === j.id && r.catId === cat.id);
+    if (minhas.some((r) => r.status === 'valida')) { this.rejeitar(user, texto, 'já acertou'); return null; }
+    // continha: 3 tentativas (para ninguém ficar chutando todos os números); ditado: pode tentar à vontade
+    if (cat.pergunta.tipo === 'conta' && minhas.length >= 3) { this.rejeitar(user, texto, 'acabaram as 3 tentativas'); return null; }
+    const r = {
+      id: `${this.rodada}-${j.id}-${cat.id}-${minhas.length}`,
+      jogadorId: j.id, nome: j.nome, foto: j.foto, catId: cat.id, palavra: c.palavra, norm: normalizar(c.palavra),
+      letra: this.letra, ms: this.agora() - this.inicioRodada,
+      status: c.certo ? 'valida' : 'invalida', motivo: c.certo ? '' : 'resposta errada', verificada: c.certo, manual: false, pontos: 0,
+    };
+    this.respostas.push(r);
+    if (c.certo) {
+      const ordem = this.respostas.filter((x) => x.catId === cat.id && x.status === 'valida').length;
+      this.addFeed({ tipo: 'resposta', nome: j.nome, foto: j.foto, itens: [{ cat: cat.nome, palavra: `${ordem}º a acertar`, status: 'valida' }] });
+      this.alerta('resposta', { nome: j.nome, foto: j.foto, itens: [] });
+    }
+    this.mudou();
+    return { respostas: 1 };
   }
 
   nomeCat(id) {
@@ -396,6 +441,19 @@ export class Jogo extends Emissor {
 
     for (const c of catsValidas) {
       const lista = porCat[c.id];
+      if (c.pergunta) {
+        // pergunta: pontos pela ordem de quem acertou primeiro
+        const rap = P.rapidez || [15, 12, 10, 8, 6];
+        const certas = lista.filter((r) => r.status === 'valida').sort((a, b) => a.ms - b.ms);
+        certas.forEach((r, i) => {
+          let pts = i < rap.length ? rap[i] : (P.acertouPergunta ?? 5);
+          if (this.desafio?.id === 'triplo') pts *= 3;
+          r.pontos = pts; r.primeiro = i === 0; r.unica = i === 0; r.ordem = i + 1;
+          somar(r.jogadorId, pts);
+        });
+        for (const r of lista) if (r.status !== 'valida') r.pontos = 0;
+        continue;
+      }
       const validas = lista.filter((r) => r.status === 'valida').sort((a, b) => a.ms - b.ms);
       const contagem = {};
       for (const r of validas) contagem[r.norm] = (contagem[r.norm] || 0) + 1;
@@ -463,7 +521,8 @@ export class Jogo extends Emissor {
       participantes: participantes.size,
       categorias: catsValidas.map((c) => ({
         id: c.id, nome: c.nome, ouro: this.catOuro === c.id,
-        respostas: porCat[c.id].map((r) => ({ id: r.id, nome: r.nome, foto: r.foto, palavra: r.palavra, status: r.status, unica: r.unica, repetida: r.repetida, primeiro: r.primeiro, pontos: r.pontos })),
+        pergunta: c.pergunta ? { tipo: c.pergunta.tipo, revelar: c.pergunta.revelar } : null,
+        respostas: porCat[c.id].filter((r) => !c.pergunta || r.status === 'valida').map((r) => ({ id: r.id, nome: r.nome, foto: r.foto, palavra: r.palavra, status: r.status, unica: r.unica, repetida: r.repetida, primeiro: r.primeiro, pontos: r.pontos })),
       })),
     };
   }
@@ -501,6 +560,18 @@ export class Jogo extends Emissor {
 
   trocarLetra() {
     if (this.fase !== 'jogando' && this.fase !== 'pausado' && this.fase !== 'sorteio') return false;
+    const atual = this.catAtual();
+    if (atual?.pergunta) {
+      // em rodada de pergunta, troca a pergunta (respostas certas anteriores continuam valendo)
+      const nova = { id: `${atual.id}_${Date.now().toString(36)}`, nome: atual.nome, apelidos: [], eliminada: false, tipo: atual.tipo };
+      atual.trocada = true;
+      nova.pergunta = novaPergunta(atual.tipo);
+      this.categorias.push(nova);
+      this.letra = letraDaPergunta(nova.pergunta);
+      this.alerta('nova_pergunta', { letra: this.letra, falar: nova.pergunta.falar });
+      this.mudou();
+      return true;
+    }
     this.letra = this.sortearLetraNova();
     this.alerta('nova_letra', { letra: this.letra });
     this.mudou();
@@ -511,7 +582,7 @@ export class Jogo extends Emissor {
   trocarCategoria() {
     if (this.fase !== 'jogando' && this.fase !== 'pausado') return false;
     const atual = this.catAtual();
-    let ativas = this.cfg.categorias.filter((c) => c.ativa && !this.categorias.some((x) => x.id === c.id));
+    let ativas = this.cfg.categorias.filter((c) => c.ativa && !c.tipo && !this.categorias.some((x) => x.id === c.id));
     const comLetra = ativas.filter((c) => c.livre || !letrasComRespostas(c.id, 5) || letrasComRespostas(c.id, 5).includes(this.letra));
     if (comLetra.length) ativas = comLetra;
     if (!ativas.length) return false;
@@ -519,6 +590,7 @@ export class Jogo extends Emissor {
     if (atual) atual.trocada = true;
     this.categorias.push({ id: nova.id, nome: nova.nome, apelidos: nova.apelidos || [], eliminada: false });
     this.ultimaCat = nova.id;
+    if (atual?.pergunta) this.letra = this.sortearLetraNova();
     this.alerta('nova_categoria', { cat: nova.nome, categoria: nova.nome, catId: nova.id, fala: nova.fala || '', letra: this.letra });
     this.mudou();
     return true;
@@ -652,6 +724,11 @@ export class Jogo extends Emissor {
 
   // respostas certas da rodada (as mais recentes primeiro) com marcação de única/repetida
   paredeRespostas() {
+    const atual = this.catAtual();
+    if (atual?.pergunta) {
+      // não mostra a resposta, só quem acertou e em que ordem
+      return this.respostas.filter((r) => r.status === 'valida' && r.catId === atual.id).slice(0, 18).map((r, i) => ({ nome: r.nome, foto: r.foto, palavra: `${i + 1}º lugar`, unica: i === 0 }));
+    }
     const validas = this.respostas.filter((r) => r.status === 'valida');
     const cont = {};
     for (const r of validas) cont[r.norm] = (cont[r.norm] || 0) + 1;
@@ -679,7 +756,7 @@ export class Jogo extends Emissor {
       letra: this.letra,
       modo: this.cfg.modo,
       relampago: this.relampagoRodada,
-      categoria: this.catAtual() ? { id: this.catAtual().id, nome: this.catAtual().nome } : null,
+      categoria: this.catAtual() ? { id: this.catAtual().id, nome: this.catAtual().nome, tipo: this.catAtual().tipo || null, pergunta: this.catAtual().pergunta && this.fase !== 'sorteio' ? this.catAtual().pergunta.texto : null } : null,
       parede: this.paredeRespostas(),
       categorias: this.categorias.map((c, i) => ({ id: c.id, nome: c.nome, num: i + 1, eliminada: c.eliminada, ouro: this.catOuro === c.id, total: contagem[c.id] || 0, ultimas: (ultimas[c.id] || []).slice(0, 3) })),
       restanteMs: this.tempoRestante(),

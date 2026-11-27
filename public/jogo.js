@@ -128,8 +128,15 @@
       el.style.fontSize = `${tam}px`;
       if (nome !== '???') pulsar(el, 'pousou');
     }
-    const n = e.parede.length ? e.jogadoresRodada : 0;
+    const tipo = e.categoria && e.categoria.tipo;
+    $('#rotuloLetra').textContent = tipo === 'conta' ? 'CONTA' : 'LETRA';
+    const pg = $('#pergunta');
+    const txtP = e.fase !== 'sorteio' && e.categoria && e.categoria.pergunta ? e.categoria.pergunta : '';
+    const htmlP = esc(txtP).replace(/_{3,}/, '<span class="lacuna">______</span>');
+    if (pg.dataset.h !== htmlP) { pg.innerHTML = htmlP; pg.dataset.h = htmlP; pg.className = `${tipo || ''} ${txtP ? 'ativo' : ''}`; }
+    const n = e.parede.length;
     $('#contRespostas').textContent = e.fase === 'sorteio' ? '' : n ? `✅ ${n} ${n === 1 ? 'acertou' : 'acertaram'}` : '';
+    $('#parede').style.maxHeight = txtP ? '200px' : '';
     const html = e.parede.slice(0, 12).map((r) => `<div class="pchip ${r.unica ? 'unica' : ''}">${avatar(r.nome, r.foto)}<div class="txt">${esc(r.palavra)}<span class="quem">${esc(r.nome)}</span></div></div>`).join('');
     const p = $('#parede');
     if (p.dataset.h !== html) { p.innerHTML = html; p.dataset.h = html; }
@@ -161,6 +168,10 @@
     const maxChips = Math.max(5, Math.floor(30 / nCat));
     $('#resultadoCategorias').innerHTML = r.categorias.map((c, i) => {
       const ord = c.respostas.filter((x) => x.status === 'valida').sort((a, b) => b.pontos - a.pontos);
+      if (c.pergunta) {
+        const chipsP = ord.slice(0, 8).map((x, k) => `<span class="rchip ${k === 0 ? 'unica' : 'repetida'}">${k + 1}º ${esc(x.nome)} <small>+${x.pontos}</small></span>`).join('');
+        return `<div class="resCat" style="animation-delay:${0.3 + i * 0.1}s"><div class="resposta-certa">✅ ${esc(c.pergunta.revelar)}</div><div class="chips">${chipsP || '<span class="vazio">ninguém acertou</span>'}</div></div>`;
+      }
       const chips = ord.slice(0, maxChips).map((x) => {
         const cls = x.status === 'invalida' ? 'invalida' : x.status === 'pendente' ? 'pendente' : x.unica ? 'unica' : 'repetida';
         return `<span class="rchip ${cls}">${esc(x.palavra)} <small>${x.status === 'invalida' ? '✖' : '+' + x.pontos}</small></span>`;
@@ -258,13 +269,15 @@
 
   function tratarEvento(ev) {
     switch (ev.tipo) {
-      case 'valendo': Voz.falar(`${fraseCat(ev)} que comece com a letra ${ev.letra}... Valendo!`); alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
+      case 'valendo': Voz.falar(ev.pergunta ? `${ev.pergunta.falar} Valendo!` : `${fraseCat(ev)} que comece com a letra ${ev.letra}... Valendo!`); alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
       case 'resposta': Sons.tocar('resposta'); break;
       case 'stop': alerta('STOP!', 'vermelho', 2200, 'gigante'); Sons.tocar('stop'); setTimeout(() => Voz.falar('Stop! Acabou o tempo.'), 600); break;
       case 'melhor_rodada': if (ev.nome) setTimeout(() => Voz.falar(`Quem mais pontuou nessa rodada foi ${nomeFalado(ev.nome)}!`), 3500); break;
       case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
       case 'desafio_voz': break;
       case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou a letra! Agora com a letra ${ev.letra}.`); break;
+      case 'nova_pergunta': alerta('🔄 NOVA PERGUNTA', 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou! ${ev.falar}`); break;
+      case 'resposta_certa': setTimeout(() => Voz.falar(ev.qual === 'conta' ? `A resposta é ${ev.resposta}!` : ev.revelar), 1800); break;
       case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); Voz.falar(`Mudou a categoria! Agora vale ${fraseCat(ev)} com a letra ${ev.letra}.`); break;
       case 'categoria_eliminada': alerta(`💥 SAIU: ${esc(ev.cat)}`, 'vermelho'); Sons.tocar('ruim'); break;
       case 'desafio': Voz.falar(`Desafio: ${ev.desafio.descricao}`); alerta(`🎯 ${esc(ev.desafio.nome)}<small>${esc(ev.desafio.descricao)}${ev.catOuro ? ' — ' + esc(ev.catOuro) : ''}</small>`, 'rosa', 3400); Sons.tocar('alerta'); break;

@@ -201,15 +201,21 @@ window.Voz = (() => {
   }
   if (window.speechSynthesis) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
 
-  async function falar(texto) {
-    if (!ligada || !texto) return;
+  // fila: uma frase espera a outra terminar (nada é cortado no meio)
+  let fila = Promise.resolve();
+  function falar(texto) {
+    if (!ligada || !texto) return fila;
+    fila = fila.then(() => falarAgora(texto));
+    return fila;
+  }
+
+  async function falarAgora(texto) {
     Musica.abaixar(true);
     try {
       if (window.__falarNativo) {
         await window.__falarNativo(texto);
       } else if (window.speechSynthesis) {
         await new Promise((ok) => {
-          speechSynthesis.cancel();
           const u = new SpeechSynthesisUtterance(texto);
           u.lang = 'pt-BR';
           if (vozPT) u.voice = vozPT;
