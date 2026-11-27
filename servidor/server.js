@@ -7,7 +7,6 @@
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 import { TikTokLiveConnection, WebcastEvent, ControlEvent } from 'tiktok-live-connector';
-import { rotaVoz } from './voz.js';
 
 const PORT = Number(process.env.PORT) || 8787;
 const EULER = process.env.EULER_API_KEY || ''; // opcional: chave grátis do eulerstream.com
@@ -50,7 +49,6 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, jogo: 'adedonha', usuario: atual, estado: ultimoStatus.state, mensagem: ultimoStatus.msg, comentariosRecebidos: comentarios, ultimoComentario, appsConectados: clientes.size }));
   }
   if (url.pathname === '/foto') return foto(res, url.searchParams.get('u') || '');
-  if (url.pathname === '/voz') return rotaVoz(req, res);
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', ...CORS });
   res.end('Servidor da Adedonha Ao Vivo ligado. Use o aplicativo no celular.');
 });
@@ -123,7 +121,6 @@ async function ligarLive(nome) {
       presente: { nome: g.giftName || `Presente ${d.giftId || ''}`.trim(), quantidade: Number(d.repeatCount || 1), diamantes: Number(g.diamondCount || 0), imagem: img(g.giftImage) },
     });
   });
-  c.on(WebcastEvent.FOLLOW, (d) => todos({ type: 'follow', user: usuario(d) }));
   c.on(WebcastEvent.STREAM_END, () => { querLigado = false; status('ended', 'A live terminou.'); });
   c.on(ControlEvent.DISCONNECTED, () => {
     if (con !== c) return;

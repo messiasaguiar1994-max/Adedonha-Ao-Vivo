@@ -44,7 +44,6 @@
     Sons.configurar(efeitos);
     Voz.configurar(efeitos);
     Musica.configurar(efeitos);
-    window.dispatchEvent(new CustomEvent('efeitos-jogo', { detail: efeitos }));
     if (typeof aplicarFundo === 'function' && ultimaMidia) aplicarFundo(ultimaMidia.fundo);
     document.body.classList.toggle('semAnimacao', !efeitos.animacoes);
   }
@@ -296,7 +295,6 @@
   const nomeFalado = (n) => String(n || '').replace(/[_.]/g, ' ').replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/)[0] || '';
 
   function tratarEvento(ev) {
-    window.dispatchEvent(new CustomEvent('jogo-evento', { detail: ev }));
     switch (ev.tipo) {
       case 'valendo': Voz.falar(ev.pergunta ? `${ev.pergunta.falar} Valendo!` : `${fraseCat(ev)} que comece com a letra ${ev.letra}... Valendo!`); alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
       case 'resposta': Sons.tocar('resposta'); break;
@@ -305,7 +303,6 @@
       case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
       case 'desafio_voz': break;
       case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou a letra! Agora com a letra ${ev.letra}.`); break;
-      case 'teste_voz': Voz.falar('Oi, gente! Bora jogar Adedonha? Uma fruta que comece com a letra M... Valendo!'); break;
       case 'nova_pergunta': alerta('🔄 NOVA PERGUNTA', 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou! ${ev.falar}`); break;
       case 'resposta_certa': setTimeout(() => Voz.falar(ev.qual === 'conta' ? `A resposta é ${ev.resposta}!` : ev.revelar), 1800); break;
       case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); Voz.falar(`Mudou a categoria! Agora vale ${fraseCat(ev)} com a letra ${ev.letra}.`); break;

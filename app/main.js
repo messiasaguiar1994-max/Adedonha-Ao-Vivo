@@ -12,7 +12,7 @@ import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 // voz do próprio celular (Android); no navegador fica a voz do navegador
 if (Capacitor.isNativePlatform()) {
-  window.__falarNativo = (texto) => TextToSpeech.speak({ text: texto, lang: 'pt-BR', rate: 1.0, pitch: 1.2, volume: 1.0, category: 'playback' });
+  window.__falarNativo = (texto) => TextToSpeech.speak({ text: texto, lang: 'pt-BR', rate: 1.0, pitch: 1.0, volume: 1.0, category: 'playback' });
 }
 
 const PREFIXO = 'adedonha:';
@@ -38,8 +38,6 @@ const central = criarCentral({
 });
 window.__central = central;
 window.__cfg = cfg;
-// endereço do servidor para a voz natural
-window.__servidorVoz = () => String(cfg.app?.servidor || '').trim().replace(/\/+$/, '').replace(/^(?!https?:\/\/)/, 'https://');
 window.__conexoes = conexoes;
 
 // imita o io() do socket.io

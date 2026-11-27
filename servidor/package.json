@@ -5,15 +5,9 @@
   "type": "module",
   "description": "Servidor da Adedonha Ao Vivo: lê a live do TikTok e repassa chat e presentes para o aplicativo",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" },
   "dependencies": {
-    "msedge-tts": "^2.1.1",
-    "msedge-tts": "2.1.1",
     "tiktok-live-connector": "2.5.0",
     "ws": "^8.18.0"
   }

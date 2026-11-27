@@ -17,17 +17,8 @@ await build({
   logLevel: 'warning',
 });
 
-// apresentadora 3D (vai para public/, usada no PC e no aplicativo)
-await build({
-  entryPoints: [path.join(RAIZ, 'fontes/apresentadora.js')],
-  bundle: true, format: 'iife', target: ['chrome90'], minify: true,
-  outfile: path.join(RAIZ, 'public/apresentadora.js'), logLevel: 'warning',
-});
-fs.mkdirSync(path.join(DIST, 'modelos'), { recursive: true });
-fs.copyFileSync(path.join(RAIZ, 'public/modelos/menina.glb'), path.join(DIST, 'modelos/menina.glb'));
-
 const pub = (f) => fs.readFileSync(path.join(RAIZ, 'public', f), 'utf8');
-for (const f of ['jogo.css', 'jogo.js', 'sons.js', 'painel.html', 'painel.css', 'painel.js', 'apresentadora.js']) fs.writeFileSync(path.join(DIST, f), pub(f));
+for (const f of ['jogo.css', 'jogo.js', 'sons.js', 'painel.html', 'painel.css', 'painel.js']) fs.writeFileSync(path.join(DIST, f), pub(f));
 fs.copyFileSync(path.join(RAIZ, 'app/menu.js'), path.join(DIST, 'menu.js'));
 fs.copyFileSync(path.join(RAIZ, 'app/app.css'), path.join(DIST, 'app.css'));
 

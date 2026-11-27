@@ -18,9 +18,7 @@
     "@capacitor/cli": "7.6.10",
     "@capacitor/core": "7.6.10",
     "express": "^4.21.2",
-    "msedge-tts": "^2.1.1",
     "socket.io": "^4.8.1",
-    "three": "^0.170.0",
     "tiktok-live-connector": "2.5.0",
     "ws": "^8.18.0"
   },

@@ -678,15 +678,6 @@ export class Jogo extends Emissor {
     return registro;
   }
 
-  // alguém seguiu a live: vira um balão com a foto (uma vez por pessoa)
-  receberSeguidor(user) {
-    this.seguidores = this.seguidores || new Set();
-    const id = String(user.id || user.nome).toLowerCase();
-    if (this.seguidores.has(id)) return;
-    this.seguidores.add(id);
-    this.alerta('seguidor', { nome: user.nome, foto: user.foto });
-  }
-
   // ---------- comandos ----------
   podeComandar(user) {
     if (user.simulador || user.admin) return true;
