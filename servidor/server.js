@@ -121,6 +121,7 @@ async function ligarLive(nome) {
       presente: { nome: g.giftName || `Presente ${d.giftId || ''}`.trim(), quantidade: Number(d.repeatCount || 1), diamantes: Number(g.diamondCount || 0), imagem: img(g.giftImage) },
     });
   });
+  c.on(WebcastEvent.FOLLOW, (d) => todos({ type: 'follow', user: usuario(d) }));
   c.on(WebcastEvent.STREAM_END, () => { querLigado = false; status('ended', 'A live terminou.'); });
   c.on(ControlEvent.DISCONNECTED, () => {
     if (con !== c) return;

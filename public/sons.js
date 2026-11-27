@@ -251,6 +251,7 @@ window.Voz = (() => {
 
   async function falarAgora(texto) {
     Musica.abaixar(true);
+    window.dispatchEvent(new Event('voz-inicio'));
     try {
       if (window.__falarNativo) {
         await window.__falarNativo(texto);
@@ -266,6 +267,7 @@ window.Voz = (() => {
         });
       }
     } catch { /* sem voz disponível */ }
+    window.dispatchEvent(new Event('voz-fim'));
     Musica.abaixar(false);
   }
   return { falar, configurar(opc) { ligada = opc.voz !== false; } };

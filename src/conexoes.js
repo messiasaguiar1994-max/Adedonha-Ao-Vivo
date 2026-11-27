@@ -104,6 +104,7 @@ export class Conexoes extends EventEmitter {
       const p = lerPresente(d);
       if (presenteFinal(p)) this.presente(lerUsuario(d), p, 'tiktok');
     });
+    con.on(WebcastEvent.FOLLOW, (d) => this.emit('seguidor', { user: lerUsuario(d) }));
     con.on(WebcastEvent.STREAM_END, () => {
       this.tiktok.status = 'desconectado';
       this.tiktok.detalhe = 'A live terminou.';

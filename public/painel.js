@@ -191,6 +191,7 @@
     if ($('#exemplosChat').dataset.h !== html) { $('#exemplosChat').innerHTML = html; $('#exemplosChat').dataset.h = html; }
   }
   $('#exemplosChat').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ex]'); if (b) { $('#simTexto').value = b.dataset.ex; $('#simTexto').focus(); } });
+  $('#btSimSeguir').onclick = () => acao('sim_seguidor', { usuario: $('#simPresUsuario').value || 'Fã' });
   $('#btSimPresente').onclick = () => acao('sim_presente', { usuario: $('#simPresUsuario').value, presente: $('#simPresente').value, quantidade: Number($('#simQtd').value), diamantes: Number($('#simDiam').value) });
 
   // ---------- respostas ----------

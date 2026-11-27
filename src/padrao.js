@@ -109,7 +109,8 @@ export const PADRAO = {
     voz: true,             // voz que anuncia a categoria e a letra
     musica: true,          // música de fundo
     volumeMusica: 0.3,
-    escurecerFundo: 0.35,  // quanto escurecer a sua imagem/vídeo de fundo (0 a 0.9)
+    escurecerFundo: 0.35,
+    apresentadora: true,   // personagem 3D apresentando  // quanto escurecer a sua imagem/vídeo de fundo (0 a 0.9)
     animacoes: true,
     confete: true,
     fotoPerfil: true,

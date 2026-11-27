@@ -81,6 +81,8 @@ export class ConexoesApp extends Emissor {
         this.avisar(mapa[d.state] || d.state, d.msg || '');
       } else if (d.type === 'chat') {
         this.chat({ ...d.user, foto: this.foto(d.user.foto) }, d.texto, 'tiktok');
+      } else if (d.type === 'follow') {
+        this.emit('seguidor', { user: { ...d.user, foto: this.foto(d.user.foto) } });
       } else if (d.type === 'gift') {
         this.presente({ ...d.user, foto: this.foto(d.user.foto) }, d.presente, 'tiktok');
       }

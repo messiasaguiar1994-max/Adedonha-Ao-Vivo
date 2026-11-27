@@ -44,6 +44,7 @@
     Sons.configurar(efeitos);
     Voz.configurar(efeitos);
     Musica.configurar(efeitos);
+    window.dispatchEvent(new CustomEvent('efeitos-jogo', { detail: efeitos }));
     if (typeof aplicarFundo === 'function' && ultimaMidia) aplicarFundo(ultimaMidia.fundo);
     document.body.classList.toggle('semAnimacao', !efeitos.animacoes);
   }
@@ -295,6 +296,7 @@
   const nomeFalado = (n) => String(n || '').replace(/[_.]/g, ' ').replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/)[0] || '';
 
   function tratarEvento(ev) {
+    window.dispatchEvent(new CustomEvent('jogo-evento', { detail: ev }));
     switch (ev.tipo) {
       case 'valendo': Voz.falar(ev.pergunta ? `${ev.pergunta.falar} Valendo!` : `${fraseCat(ev)} que comece com a letra ${ev.letra}... Valendo!`); alerta(ev.relampago ? '⚡ VALENDO! ⚡<small>Rodada relâmpago</small>' : 'VALENDO!', 'verde', 1800); Sons.tocar('valendo'); break;
       case 'resposta': Sons.tocar('resposta'); break;
