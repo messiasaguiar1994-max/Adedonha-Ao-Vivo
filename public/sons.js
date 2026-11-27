@@ -251,6 +251,7 @@ window.Voz = (() => {
 
   let opcoes = {};
   let falhasNatural = 0;
+  let ctxVoz = null;
   // voz natural: pede o áudio ao servidor (Render no app, o próprio PC na versão PC)
   async function falarNatural(texto) {
     const base = typeof window.__servidorVoz === 'function' ? window.__servidorVoz() : '';
@@ -266,6 +267,19 @@ window.Voz = (() => {
     await new Promise((ok, erro) => {
       const a = new Audio(src);
       a.volume = 1;
+      // mede o volume da fala (para o bico do passarinho mexer junto com a voz)
+      try {
+        const C = window.AudioContext || window.webkitAudioContext;
+        ctxVoz = ctxVoz || new C();
+        if (ctxVoz.state !== 'running') ctxVoz.resume();
+        const fonte = ctxVoz.createMediaElementSource(a);
+        const an = ctxVoz.createAnalyser();
+        an.fftSize = 512;
+        fonte.connect(an); an.connect(ctxVoz.destination);
+        const buf = new Uint8Array(an.fftSize);
+        window.__nivelVoz = () => { an.getByteTimeDomainData(buf); let m = 0; for (const v of buf) m = Math.max(m, Math.abs(v - 128)); return Math.min(1, m / 60); };
+        a.addEventListener('ended', () => { window.__nivelVoz = null; });
+      } catch { window.__nivelVoz = null; }
       a.onended = ok;
       a.onerror = erro;
       const p = a.play();
@@ -298,6 +312,7 @@ window.Voz = (() => {
         });
       }
     } catch { /* sem voz disponível */ }
+    window.__nivelVoz = null;
     window.dispatchEvent(new Event('voz-fim'));
     Musica.abaixar(false);
   }

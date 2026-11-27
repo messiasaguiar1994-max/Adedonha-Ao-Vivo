@@ -24,7 +24,7 @@ await build({
   outfile: path.join(RAIZ, 'public/apresentadora.js'), logLevel: 'warning',
 });
 fs.mkdirSync(path.join(DIST, 'modelos'), { recursive: true });
-fs.copyFileSync(path.join(RAIZ, 'public/modelos/apresentadora.glb'), path.join(DIST, 'modelos/apresentadora.glb'));
+fs.copyFileSync(path.join(RAIZ, 'public/modelos/passarinho.glb'), path.join(DIST, 'modelos/passarinho.glb'));
 
 const pub = (f) => fs.readFileSync(path.join(RAIZ, 'public', f), 'utf8');
 for (const f of ['jogo.css', 'jogo.js', 'sons.js', 'painel.html', 'painel.css', 'painel.js', 'apresentadora.js']) fs.writeFileSync(path.join(DIST, f), pub(f));
