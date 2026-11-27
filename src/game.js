@@ -621,6 +621,8 @@ export class Jogo extends Emissor {
 
     const j = this.jogador(user);
     j.presentes = (j.presentes || 0) + (presente.diamantes || 0) * (presente.quantidade || 1);
+    // quem manda presente fica com a foto maior nesta rodada e na próxima
+    j.destaqueAte = Math.max(j.destaqueAte || 0, this.rodada + 1);
 
     if (!this.presentesLigados()) { this.mudou(); return registro; }
 
@@ -711,8 +713,10 @@ export class Jogo extends Emissor {
 
   // ---------- estado para as telas ----------
   publico(j) {
-    return { id: j.id, nome: j.nome, foto: j.foto, pontos: j.pontos, pontosRodada: j.pontosRodada, vidas: j.vidas, eliminado: j.eliminado };
+    return { id: j.id, nome: j.nome, foto: j.foto, pontos: j.pontos, pontosRodada: j.pontosRodada, vidas: j.vidas, eliminado: j.eliminado, destaque: this.temDestaque(j) };
   }
+
+  temDestaque(j) { return !!j && (j.destaqueAte || 0) >= this.rodada && this.rodada > 0; }
 
   ranking(n = 10) {
     return [...this.jogadores.values()]
@@ -727,12 +731,12 @@ export class Jogo extends Emissor {
     const atual = this.catAtual();
     if (atual?.pergunta) {
       // não mostra a resposta, só quem acertou e em que ordem
-      return this.respostas.filter((r) => r.status === 'valida' && r.catId === atual.id).slice(0, 18).map((r, i) => ({ nome: r.nome, foto: r.foto, palavra: `${i + 1}º lugar`, unica: i === 0 }));
+      return this.respostas.filter((r) => r.status === 'valida' && r.catId === atual.id).slice(0, 18).map((r, i) => ({ nome: r.nome, foto: r.foto, palavra: `${i + 1}º lugar`, unica: i === 0, destaque: this.temDestaque(this.jogadores.get(r.jogadorId)) }));
     }
     const validas = this.respostas.filter((r) => r.status === 'valida');
     const cont = {};
     for (const r of validas) cont[r.norm] = (cont[r.norm] || 0) + 1;
-    return validas.slice(-18).reverse().map((r) => ({ nome: r.nome, foto: r.foto, palavra: r.palavra, unica: cont[r.norm] === 1 }));
+    return validas.slice(-18).reverse().map((r) => ({ nome: r.nome, foto: r.foto, palavra: r.palavra, unica: cont[r.norm] === 1, destaque: this.temDestaque(this.jogadores.get(r.jogadorId)) }));
   }
 
   tempoRestante() {

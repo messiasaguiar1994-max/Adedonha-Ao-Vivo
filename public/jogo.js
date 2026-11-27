@@ -44,6 +44,7 @@
     Sons.configurar(efeitos);
     Voz.configurar(efeitos);
     Musica.configurar(efeitos);
+    if (typeof aplicarFundo === 'function' && ultimaMidia) aplicarFundo(ultimaMidia.fundo);
     document.body.classList.toggle('semAnimacao', !efeitos.animacoes);
   }
 
@@ -68,6 +69,30 @@
     desenhar(anterior);
   });
   socket.on('evento', tratarEvento);
+
+  // ---------- suas músicas e fundo (enviados no painel) ----------
+  let fundoAtual = '';
+  function aplicarFundo(f) {
+    const caixa = $('#fundoMidia');
+    const chave = f ? f.id : '';
+    if (chave !== fundoAtual) {
+      fundoAtual = chave;
+      if (!f) caixa.innerHTML = '';
+      else if (/^video\//.test(f.mime || '') || /\.(mp4|webm|mov|m4v)$/i.test(f.nome || '')) caixa.innerHTML = `<video src="${esc(f.url)}" autoplay muted loop playsinline></video><div class="veu"></div>`;
+      else caixa.innerHTML = `<img src="${esc(f.url)}" alt=""><div class="veu"></div>`;
+    }
+    document.body.classList.toggle('comFundo', !!f && params.get('transparente') !== '1');
+    const veu = caixa.querySelector('.veu');
+    if (veu) veu.style.opacity = String(efeitos.escurecerFundo ?? 0.35);
+  }
+  let ultimaMidia = { musicas: [], fundo: null };
+  function aplicarMidia(m) { ultimaMidia = m || { musicas: [], fundo: null }; Musica.usarArquivos(ultimaMidia.musicas); aplicarFundo(ultimaMidia.fundo); }
+  async function carregarMidia() {
+    try { aplicarMidia(window.__midiaApp ? await window.__midiaApp.listar() : await (await fetch('/api/midia')).json()); } catch { /* sem mídia */ }
+  }
+  socket.on('midia', aplicarMidia);
+  window.addEventListener('midia-mudou', carregarMidia);
+  carregarMidia();
 
   // ---------- desenho ----------
   let girando = false;
@@ -136,15 +161,17 @@
     if (pg.dataset.h !== htmlP) { pg.innerHTML = htmlP; pg.dataset.h = htmlP; pg.className = `${tipo || ''} ${txtP ? 'ativo' : ''}`; }
     const n = e.parede.length;
     $('#contRespostas').textContent = e.fase === 'sorteio' ? '' : n ? `✅ ${n} ${n === 1 ? 'acertou' : 'acertaram'}` : '';
-    $('#parede').style.maxHeight = txtP ? '200px' : '';
-    const html = e.parede.slice(0, 12).map((r) => `<div class="pchip ${r.unica ? 'unica' : ''}">${avatar(r.nome, r.foto)}<div class="txt">${esc(r.palavra)}<span class="quem">${esc(r.nome)}</span></div></div>`).join('');
+    $('#parede').style.maxHeight = txtP ? '250px' : '';
+    // cartões: foto, nome e embaixo (pequeno) a palavra que a pessoa comentou; quem mandou presente fica maior
+    const lista = [...e.parede].sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0)).slice(0, 10);
+    const html = lista.map((r) => `<div class="carta ${r.unica ? 'unica' : ''} ${r.destaque ? 'destaque' : ''}">${avatar(r.nome, r.foto)}<div class="cNome">${esc(r.nome)}</div><div class="cPal">${esc(r.palavra)}</div></div>`).join('');
     const p = $('#parede');
     if (p.dataset.h !== html) { p.innerHTML = html; p.dataset.h = html; }
   }
 
   function desenharRankingVivo(e) {
     const html = e.ranking.length
-      ? e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('')
+      ? e.ranking.slice(0, 5).map((j, i) => `<div class="linhaRank ${i === 0 ? 'top1' : ''} ${j.destaque ? 'destaque' : ''}"><div class="pos">${i + 1}</div>${avatar(j.nome, j.foto)}<div class="nome">${esc(j.nome)}</div><div class="pts">${j.pontos}</div></div>`).join('')
       : '<div class="vazioRV">Placar zerado</div>';
     const el = $('#listaRV');
     if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }

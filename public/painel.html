@@ -26,6 +26,7 @@
   <button data-aba="presentes">🎁 Presentes</button>
   <button data-aba="conexao">🔌 Conexão</button>
   <button data-aba="testar">🧪 Testar</button>
+  <button data-aba="midia">🎵 Música e fundo</button>
   <button data-aba="efeitos">✨ Tela e efeitos</button>
 </nav>
 
@@ -261,6 +262,28 @@
         <label>Diamantes (cada) <input type="number" id="simDiam" value="1" min="0"></label>
       </div>
       <div class="botoes"><button class="rosa" id="btSimPresente">🎁 Enviar presente de teste</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MÚSICA E FUNDO ================= -->
+<section id="aba-midia" class="aba">
+  <div class="grade2">
+    <div class="card">
+      <h2>🎵 Suas músicas de fundo</h2>
+      <p class="dica">Envie uma ou várias músicas (MP3). Elas tocam uma depois da outra, sem parar. Sem nenhuma música aqui, toca a musiquinha do próprio jogo.</p>
+      <div class="aviso">⚠️ Use músicas <b>sem direitos autorais</b>. Música famosa costuma fazer o TikTok silenciar ou restringir a live.</div>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.musica"> Música ligada</label>
+      <div class="linhaCampos"><label>Volume da música <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volumeMusica"></label></div>
+      <div class="botoes"><label class="botaoArquivo verde">➕ Adicionar músicas<input type="file" id="arqMusicas" accept="audio/*,.mp3,.m4a,.ogg,.wav" multiple hidden></label></div>
+      <div id="listaMusicas" class="tabelaRolagem"></div>
+    </div>
+    <div class="card">
+      <h2>🖼️ Imagem ou vídeo de fundo</h2>
+      <p class="dica">Escolha uma imagem (JPG/PNG) ou um vídeo curto (MP4) para ficar atrás do jogo: tema de Natal, praia, deserto... O vídeo fica repetindo, sem som. Prefira imagem/vídeo <b>em pé</b>.</p>
+      <div class="botoes"><label class="botaoArquivo verde">🖼️ Escolher imagem ou vídeo<input type="file" id="arqFundo" accept="image/*,video/*" hidden></label><button id="btTirarFundo">Tirar fundo</button></div>
+      <div id="fundoAtual" class="statusBox">Sem fundo (usa o fundo roxo do jogo).</div>
+      <div class="linhaCampos"><label>Escurecer o fundo (para o texto ficar legível) <input type="range" min="0" max="0.9" step="0.05" data-cfg="efeitos.escurecerFundo"></label></div>
     </div>
   </div>
 </section>

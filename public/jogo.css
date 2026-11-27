@@ -238,3 +238,26 @@ body.fase-ranking #rankingVivo, body.fase-fim #rankingVivo { display: none; }
 #pergunta.ativo { display: block; }
 #pergunta .lacuna { color: var(--rosa); }
 .resposta-certa { text-align: center; font-weight: 800; font-size: 40px; margin: 0 0 10px; padding: 10px 20px; border-radius: 20px; background: rgba(61,220,132,.25); border: 3px solid var(--verde); }
+
+/* cartões de quem acertou: foto, nome e a palavra pequenininha embaixo */
+#parede { max-height: 400px; gap: 14px; align-items: flex-start; }
+.carta { width: 182px; padding: 12px 8px 10px; border-radius: 26px; background: rgba(0,0,0,.4); border: 3px solid rgba(255,210,63,.7);
+  display: flex; flex-direction: column; align-items: center; text-align: center; animation: entrar .45s cubic-bezier(.2,1.6,.4,1); }
+.carta.unica { border-color: var(--verde); background: rgba(61,220,132,.2); }
+.carta .av { width: 84px; height: 84px; font-size: 38px; border: 4px solid rgba(255,255,255,.85); }
+.carta .cNome { margin-top: 6px; font-weight: 800; font-size: 26px; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carta .cPal { font-weight: 600; font-size: 21px; line-height: 1.1; opacity: .85; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* destaque (75% maior) */
+.carta.destaque { width: 250px; border-color: #ffd23f; box-shadow: 0 0 30px rgba(255,210,63,.55); }
+.carta.destaque .av { width: 147px; height: 147px; font-size: 66px; border-color: #ffd23f; }
+.carta.destaque .cNome { font-size: 30px; }
+#listaRV .linhaRank.destaque .av { width: 108px; height: 108px; border: 4px solid #ffd23f; }
+
+/* imagem ou vídeo de fundo escolhido no painel */
+#fundoMidia { position: fixed; inset: 0; z-index: 0; display: none; background: #000; }
+#fundoMidia img, #fundoMidia video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#fundoMidia .veu { position: absolute; inset: 0; background: #000; }
+body.comFundo #fundoMidia { display: block; }
+body.comFundo #palco { background: transparent !important; }
+body.comFundo .brilho { display: none; }
+#palco { z-index: 1; }

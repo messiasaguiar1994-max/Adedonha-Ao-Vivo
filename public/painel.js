@@ -293,6 +293,56 @@
     top.textContent = ligado ? `🟢 Live conectada · ${s.contadores.chat} msgs` : '⚪ Live não conectada';
   }
 
+  // ---------- suas músicas e fundo ----------
+  const midiaApp = (() => { try { return window.parent !== window && window.parent.__midiaApp; } catch { return null; } })();
+  async function listarMidia() {
+    if (midiaApp) return midiaApp.listar();
+    return (await fetch('/api/midia')).json();
+  }
+  async function enviarMidia(tipo, arquivo) {
+    if (midiaApp) return midiaApp.adicionar(tipo, arquivo);
+    const r = await fetch(`/api/midia?tipo=${tipo}&nome=${encodeURIComponent(arquivo.name)}`, { method: 'POST', headers: { 'Content-Type': arquivo.type || 'application/octet-stream' }, body: arquivo });
+    if (!r.ok) throw new Error('falhou');
+  }
+  async function removerMidia(id) {
+    if (midiaApp) return midiaApp.remover(id);
+    await fetch(`/api/midia/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+  async function desenharMidia() {
+    let m;
+    try { m = await listarMidia(); } catch { return; }
+    $('#listaMusicas').innerHTML = m.musicas.length
+      ? m.musicas.map((x, i) => `<div class="linhaMidia"><span>${i + 1}. ${esc(x.nome)}</span><button class="mini perigo" data-remmid="${esc(x.id)}">Remover</button></div>`).join('')
+      : '<p class="dica">Nenhuma música enviada — está tocando a música do jogo.</p>';
+    $('#fundoAtual').textContent = m.fundo ? `Fundo atual: ${m.fundo.nome}` : 'Sem fundo (usa o fundo roxo do jogo).';
+    $('#btTirarFundo').dataset.id = m.fundo ? m.fundo.id : '';
+  }
+  $('#arqMusicas').onchange = async (ev) => {
+    const arqs = [...ev.target.files];
+    if (!arqs.length) return;
+    toast(`Enviando ${arqs.length} música(s)...`, '#7a5500');
+    try { for (const a of arqs) await enviarMidia('musica', a); toast('Músicas adicionadas ✓'); } catch { toast('Não consegui enviar', '#d43a4f'); }
+    ev.target.value = '';
+    desenharMidia();
+  };
+  $('#arqFundo').onchange = async (ev) => {
+    const a = ev.target.files[0];
+    if (!a) return;
+    toast('Enviando fundo...', '#7a5500');
+    try { await enviarMidia('fundo', a); toast('Fundo trocado ✓'); } catch { toast('Não consegui enviar', '#d43a4f'); }
+    ev.target.value = '';
+    desenharMidia();
+  };
+  $('#btTirarFundo').onclick = async () => { const id = $('#btTirarFundo').dataset.id; if (id) { await removerMidia(id); toast('Fundo removido'); desenharMidia(); } };
+  $('#listaMusicas').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-remmid]');
+    if (!b) return;
+    await removerMidia(b.dataset.remmid);
+    desenharMidia();
+  });
+  desenharMidia();
+  socket.on('midia', desenharMidia);
+
   // ---------- socket ----------
   socket.on('estado', (e) => { E = e; recebidoEm = performance.now(); desenhar(); });
   socket.on('conexoes', desenharConexoes);

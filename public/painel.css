@@ -58,3 +58,7 @@ body.app .soPC { display: none !important; }
 body:not(.app) .soApp { display: none !important; }
 body.app .abas { top: 0; position: relative; }
 body.app .barra { position: relative; }
+
+.botaoArquivo { display: inline-block; background: #1f9d55; color: #fff; padding: 9px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.linhaMidia { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #2c2547; }
+.linhaMidia span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

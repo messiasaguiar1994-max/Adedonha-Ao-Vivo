@@ -71,6 +71,11 @@ window.Musica = (() => {
   let volume = 0.3;
   let ligada = false;
   let gerando = null;
+  // suas músicas (arquivos enviados no painel)
+  let lista = [];
+  let faixa = 0;
+  let audio = null;
+  let abaixada = false;
 
   function contexto() {
     if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (C) ctx = new C(); }
@@ -153,7 +158,26 @@ window.Musica = (() => {
     return oc.startRendering();
   }
 
+  function tocarArquivo() {
+    if (!lista.length) return;
+    if (!audio) {
+      audio = new Audio();
+      audio.preload = 'auto';
+      audio.addEventListener('ended', () => { faixa = (faixa + 1) % lista.length; tocarArquivo(); });
+      audio.addEventListener('error', () => { faixa = (faixa + 1) % lista.length; setTimeout(tocarArquivo, 500); });
+    }
+    const m = lista[faixa % lista.length];
+    if (audio.dataset.id !== m.id) { audio.src = m.url; audio.dataset.id = m.id; }
+    audio.volume = Math.max(0, Math.min(1, abaixada ? volume * 0.25 : volume));
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => { /* toca no próximo toque na tela */ });
+  }
+
+  function pararArquivo() { if (audio) { audio.pause(); } }
+
   async function ligar() {
+    if (lista.length) { desligarGerada(); tocarArquivo(); return; }
+    pararArquivo();
     const c = contexto();
     if (!c) return;
     if (c.state !== 'running') { try { await c.resume(); } catch { /* */ } }
@@ -169,23 +193,39 @@ window.Musica = (() => {
     fonte.start();
   }
 
-  function desligar() {
+  function desligar() { pararArquivo(); desligarGerada(); }
+
+  function desligarGerada() {
     if (fonte) { try { fonte.stop(); } catch { /* */ } fonte.disconnect(); fonte = null; }
   }
 
   return {
+    // recebe a lista de músicas enviadas no painel (vazia = usa a música do próprio jogo)
+    usarArquivos(musicas) {
+      const antes = lista.map((m) => m.id).join();
+      lista = (musicas || []).filter((m) => m.url);
+      if (lista.map((m) => m.id).join() === antes) return;
+      faixa = Math.floor(Math.random() * Math.max(1, lista.length));
+      if (audio) audio.dataset.id = '';
+      if (ligada) ligar();
+    },
     configurar(opc) {
       volume = Number(opc.volumeMusica ?? 0.3);
       if (ganho && ctx) ganho.gain.setTargetAtTime(volume, ctx.currentTime, 0.1);
+      if (audio) audio.volume = Math.max(0, Math.min(1, abaixada ? volume * 0.25 : volume));
       const quer = !!opc.musica;
       if (quer && !ligada) { ligada = true; ligar(); }
       else if (!quer && ligada) { ligada = false; desligar(); }
     },
-    tentarDeNovo() { if (ligada && !fonte) ligar(); },
-    tocando() { return !!fonte; },
+    tentarDeNovo() { if (ligada) { if (lista.length) { if (!audio || audio.paused) tocarArquivo(); } else if (!fonte) ligar(); } },
+    tocando() { return lista.length ? !!audio && !audio.paused : !!fonte; },
     gerarPrevia: () => gerar(),
     // abaixa a música enquanto a voz fala
-    abaixar(sim) { if (ganho && ctx) ganho.gain.setTargetAtTime(sim ? volume * 0.25 : volume, ctx.currentTime, 0.15); },
+    abaixar(sim) {
+      abaixada = sim;
+      if (ganho && ctx) ganho.gain.setTargetAtTime(sim ? volume * 0.25 : volume, ctx.currentTime, 0.15);
+      if (audio) audio.volume = Math.max(0, Math.min(1, sim ? volume * 0.25 : volume));
+    },
   };
 })();
 

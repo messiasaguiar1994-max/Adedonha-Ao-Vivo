@@ -9,6 +9,7 @@ import { Server } from 'socket.io';
 import { carregarConfig, salvarConfig, armazenamentoPC } from './src/config.js';
 import { criarCentral } from './src/central.js';
 import { Conexoes } from './src/conexoes.js';
+import fs from 'node:fs';
 
 const cfg = carregarConfig();
 salvarConfig(cfg);
@@ -30,6 +31,43 @@ app.get('/', (_req, res) => res.sendFile(path.join(publico, 'index.html')));
 app.get(['/jogo', '/overlay'], (_req, res) => res.sendFile(path.join(publico, 'jogo.html')));
 app.get(['/painel', '/admin'], (_req, res) => res.sendFile(path.join(publico, 'painel.html')));
 app.use(express.static(publico));
+
+// ---------- suas músicas e imagem/vídeo de fundo (ficam na pasta data/midia) ----------
+const PASTA_MIDIA = path.resolve('data', 'midia');
+const ARQ_MIDIA = path.resolve('data', 'midia.json');
+fs.mkdirSync(PASTA_MIDIA, { recursive: true });
+const lerMidia = () => { try { return JSON.parse(fs.readFileSync(ARQ_MIDIA, 'utf8')); } catch { return []; } };
+const gravarMidia = (l) => fs.writeFileSync(ARQ_MIDIA, JSON.stringify(l, null, 2));
+function listaMidia() {
+  const l = lerMidia().filter((m) => fs.existsSync(path.join(PASTA_MIDIA, m.arquivo)));
+  const comUrl = l.map((m) => ({ id: m.id, tipo: m.tipo, nome: m.nome, mime: m.mime, url: `/midia/${encodeURIComponent(m.arquivo)}` }));
+  return { musicas: comUrl.filter((m) => m.tipo === 'musica'), fundo: comUrl.find((m) => m.tipo === 'fundo') || null };
+}
+app.use('/midia', express.static(PASTA_MIDIA));
+app.get('/api/midia', (_req, res) => res.json(listaMidia()));
+app.post('/api/midia', express.raw({ type: '*/*', limit: '300mb' }), (req, res) => {
+  const tipo = req.query.tipo === 'fundo' ? 'fundo' : 'musica';
+  const nome = String(req.query.nome || 'arquivo').slice(0, 120);
+  const mime = String(req.headers['content-type'] || '');
+  const ext = (nome.match(/\.[a-z0-9]{2,5}$/i) || [''])[0].toLowerCase();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const arquivo = `${id}${ext}`;
+  fs.writeFileSync(path.join(PASTA_MIDIA, arquivo), req.body);
+  let l = lerMidia();
+  if (tipo === 'fundo') { for (const m of l.filter((x) => x.tipo === 'fundo')) { try { fs.unlinkSync(path.join(PASTA_MIDIA, m.arquivo)); } catch { /* */ } } l = l.filter((x) => x.tipo !== 'fundo'); }
+  l.push({ id, tipo, nome, mime, arquivo });
+  gravarMidia(l);
+  io.emit('midia', listaMidia());
+  res.json({ ok: true });
+});
+app.delete('/api/midia/:id', (req, res) => {
+  const l = lerMidia();
+  const m = l.find((x) => x.id === req.params.id);
+  if (m) { try { fs.unlinkSync(path.join(PASTA_MIDIA, m.arquivo)); } catch { /* */ } }
+  gravarMidia(l.filter((x) => x.id !== req.params.id));
+  io.emit('midia', listaMidia());
+  res.json({ ok: true });
+});
 
 // ---------- Webhooks (para TikFinity, Streamer.bot ou qualquer programa) ----------
 // /api/chat?usuario=fulano&mensagem=1 Maria 2 Macaco

@@ -274,3 +274,16 @@ Funciona no mesmo esquema dos seus outros jogos (pescaria, elefante...):
      O botão "voltar" do celular fecha o painel.
    - Placar e configurações ficam salvos no próprio celular.
    - Os comandos pelo chat (!iniciar, !parar, !letra...) também funcionam.
+
+
+=====================================================================
+   SUAS MÚSICAS E FUNDO (aba 🎵 Música e fundo do painel)
+=====================================================================
+- Músicas: envie um ou vários MP3; tocam em sequência, sem parar.
+  Sem nenhuma música enviada, toca a musiquinha do próprio jogo.
+  Use músicas SEM direitos autorais (música famosa pode silenciar a live).
+- Fundo: escolha uma imagem ou um vídeo curto (de preferência em pé).
+  O vídeo repete sem som. Ajuste "Escurecer o fundo" para o texto ficar legível.
+- No aplicativo, tudo fica guardado no próprio celular.
+  No PC, fica na pasta data\midia.
+- Quem manda presente aparece com a foto 75% maior na rodada e na próxima.

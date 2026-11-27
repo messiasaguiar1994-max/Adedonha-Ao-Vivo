@@ -4,6 +4,9 @@
 import { criarCentral } from '../src/central.js';
 import { PADRAO, mesclar, migrar } from '../src/padrao.js';
 import { ConexoesApp } from './conexoes-app.js';
+import { MidiaApp } from './midia-app.js';
+
+window.__midiaApp = MidiaApp;
 import { Capacitor } from '@capacitor/core';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
