@@ -298,6 +298,15 @@
       <label>Volume dos efeitos <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volume"></label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.apresentadora"> Apresentadora 3D na tela</label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.voz"> Voz anunciando a categoria e a letra</label>
+      <label class="chk"><input type="checkbox" data-cfg="efeitos.vozNatural"> Voz natural (mais humana, grátis; se falhar usa a do celular)</label>
+      <label>Voz <select data-cfg="efeitos.vozNome">
+        <option value="pt-BR-ThalitaMultilingualNeural">Thalita (jovem, doce)</option>
+        <option value="pt-BR-FranciscaNeural">Francisca (moça)</option>
+        <option value="pt-BR-AntonioNeural">Antônio (homem)</option>
+      </select></label>
+      <label>Tom da voz (mais agudo = mais menina) <input type="range" min="-20" max="40" step="2" data-cfg="efeitos.vozTom"></label>
+      <label>Velocidade da fala <input type="range" min="-30" max="30" step="5" data-cfg="efeitos.vozVelocidade"></label>
+      <div class="botoes"><button id="btTestarVoz">🔊 Ouvir um teste</button></div>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.musica"> Música de fundo</label>
       <label>Volume da música <input type="range" min="0" max="1" step="0.05" data-cfg="efeitos.volumeMusica"></label>
       <label class="chk"><input type="checkbox" data-cfg="efeitos.animacoes"> Animações</label>

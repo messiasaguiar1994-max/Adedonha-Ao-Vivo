@@ -81,6 +81,7 @@ export function criarCentral({ cfg, salvarCfg, conexoes, armazenamento, extras =
       case 'sim_chat': conexoes.chat({ id: String(a.usuario || 'teste').toLowerCase(), nome: a.usuario || 'Teste', foto: '', simulador: true }, a.texto, 'simulador'); break;
       case 'sim_presente': conexoes.presente({ id: String(a.usuario || 'teste').toLowerCase(), nome: a.usuario || 'Teste', foto: '' }, { nome: a.presente || 'Rose', quantidade: Number(a.quantidade) || 1, diamantes: Number(a.diamantes) || 1, imagem: '' }, 'simulador'); break;
       case 'sim_seguidor': conexoes.emit('seguidor', { user: { id: String(a.usuario || 'fã').toLowerCase(), nome: a.usuario || 'Fã', foto: '' } }); break;
+      case 'teste_voz': jogo.alerta('teste_voz', {}); break;
       case 'bots': simulador.configurar(Number(a.quantidade) || 0); break;
       default: return false;
     }

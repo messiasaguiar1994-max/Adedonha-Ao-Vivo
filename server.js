@@ -9,6 +9,7 @@ import { Server } from 'socket.io';
 import { carregarConfig, salvarConfig, armazenamentoPC } from './src/config.js';
 import { criarCentral } from './src/central.js';
 import { Conexoes } from './src/conexoes.js';
+import { rotaVoz } from './servidor/voz.js';
 import fs from 'node:fs';
 
 const cfg = carregarConfig();
@@ -101,6 +102,7 @@ app.all('/api/comando/:cmd', (req, res) => {
   jogo.executarComando(req.params.cmd);
   res.json({ ok: true });
 });
+app.get('/voz', (req, res) => rotaVoz(req, res));
 app.get('/api/estado', (_req, res) => res.json(jogo.estadoTela()));
 
 // ---------- tempo real ----------

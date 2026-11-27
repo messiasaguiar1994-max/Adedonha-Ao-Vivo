@@ -107,6 +107,10 @@ export const PADRAO = {
     sons: true,
     volume: 0.6,
     voz: true,             // voz que anuncia a categoria e a letra
+    vozNatural: true,      // voz neural (mais natural) vinda do servidor; se falhar, usa a do celular
+    vozNome: 'pt-BR-ThalitaMultilingualNeural',
+    vozTom: 12,            // % mais agudo (voz mais doce)
+    vozVelocidade: 0,      // % mais rápida/lenta
     musica: true,          // música de fundo
     volumeMusica: 0.3,
     escurecerFundo: 0.35,

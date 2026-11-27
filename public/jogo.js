@@ -305,6 +305,7 @@
       case 'mais_tempo': alerta(`⏱ +${ev.segundos} SEGUNDOS!`, 'ciano'); Sons.tocar('alerta'); break;
       case 'desafio_voz': break;
       case 'nova_letra': alerta(`🔄 LETRA NOVA: ${esc(ev.letra)}`, 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou a letra! Agora com a letra ${ev.letra}.`); break;
+      case 'teste_voz': Voz.falar('Oi, gente! Bora jogar Adedonha? Uma fruta que comece com a letra M... Valendo!'); break;
       case 'nova_pergunta': alerta('🔄 NOVA PERGUNTA', 'rosa'); Sons.tocar('pousar'); { const el = $('#letra'); el.textContent = ev.letra; pulsar(el, 'pousou'); } Voz.falar(`Mudou! ${ev.falar}`); break;
       case 'resposta_certa': setTimeout(() => Voz.falar(ev.qual === 'conta' ? `A resposta é ${ev.resposta}!` : ev.revelar), 1800); break;
       case 'nova_categoria': alerta(`🔄 NOVA CATEGORIA<small>${esc(ev.cat)}</small>`, 'rosa'); Sons.tocar('pousar'); Voz.falar(`Mudou a categoria! Agora vale ${fraseCat(ev)} com a letra ${ev.letra}.`); break;

@@ -249,11 +249,41 @@ window.Voz = (() => {
     return fila;
   }
 
+  let opcoes = {};
+  let falhasNatural = 0;
+  // voz natural: pede o áudio ao servidor (Render no app, o próprio PC na versão PC)
+  async function falarNatural(texto) {
+    const base = typeof window.__servidorVoz === 'function' ? window.__servidorVoz() : '';
+    const sinal = (n) => `${n >= 0 ? '+' : ''}${Math.round(n)}%`;
+    const url = `${base}/voz?t=${encodeURIComponent(texto)}&v=${encodeURIComponent(opcoes.vozNome || 'pt-BR-ThalitaMultilingualNeural')}&p=${encodeURIComponent(sinal(opcoes.vozTom ?? 12))}&r=${encodeURIComponent(sinal(opcoes.vozVelocidade ?? 0))}`;
+    const ctrl = new AbortController();
+    const limite = setTimeout(() => ctrl.abort(), 7000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(limite);
+    if (!r.ok) throw new Error('voz');
+    const blob = await r.blob();
+    const src = URL.createObjectURL(blob);
+    await new Promise((ok, erro) => {
+      const a = new Audio(src);
+      a.volume = 1;
+      a.onended = ok;
+      a.onerror = erro;
+      const p = a.play();
+      if (p && p.catch) p.catch(erro);
+      setTimeout(ok, 15000);
+    });
+    URL.revokeObjectURL(src);
+  }
+
   async function falarAgora(texto) {
     Musica.abaixar(true);
     window.dispatchEvent(new Event('voz-inicio'));
     try {
-      if (window.__falarNativo) {
+      let falou = false;
+      if (opcoes.vozNatural !== false && falhasNatural < 3) {
+        try { await falarNatural(texto); falou = true; falhasNatural = 0; } catch { falhasNatural++; setTimeout(() => { falhasNatural = Math.max(0, falhasNatural - 1); }, 60000); }
+      }
+      if (falou) { /* ok */ } else if (window.__falarNativo) {
         await window.__falarNativo(texto);
       } else if (window.speechSynthesis) {
         await new Promise((ok) => {
@@ -261,6 +291,7 @@ window.Voz = (() => {
           u.lang = 'pt-BR';
           if (vozPT) u.voice = vozPT;
           u.rate = 1.05;
+          u.pitch = 1.2;
           u.onend = ok; u.onerror = ok;
           speechSynthesis.speak(u);
           setTimeout(ok, 9000);
@@ -270,5 +301,5 @@ window.Voz = (() => {
     window.dispatchEvent(new Event('voz-fim'));
     Musica.abaixar(false);
   }
-  return { falar, configurar(opc) { ligada = opc.voz !== false; } };
+  return { falar, configurar(opc) { ligada = opc.voz !== false; opcoes = opc; } };
 })();
