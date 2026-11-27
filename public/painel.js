@@ -84,7 +84,7 @@
       competitivo: 'Uma categoria e uma letra por rodada. Quem acerta ganha pontos; resposta que ninguém mais deu vale mais. Ranking acumula entre as rodadas.',
       sobrevivencia: 'Quem não acertar o mínimo de respostas perde uma vida. Sem vidas = eliminado. O último que sobrar é o campeão.',
       relampago: 'Rodadas curtinhas (ajuste o tempo em "Pontos e modos").',
-      presente: 'Igual ao competitivo, mas os presentes sempre ativam eventos (aba Presentes).',
+      presente: 'Modo normal: todos jogam por pontos e os presentes ativam os eventos (aba Presentes). A cada X rodadas entra uma rodada desafio.',
       desafio: 'Toda rodada vem com uma regra especial sorteada (palavras grandes valem dobro, rodada de ouro etc.).',
     };
     $('#dicaModo').textContent = dicas[cfg.modo] || '';

@@ -29,9 +29,10 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 7,
+  versaoConfig: 8,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
-  modo: 'competitivo',       // competitivo | sobrevivencia | relampago | presente | desafio
+  modo: 'presente',          // competitivo | sobrevivencia | relampago | presente | desafio
+  desafioACada: 20,          // a cada 20 rodadas entra uma rodada desafio (0 = nunca)
 
   categorias: [
     { id: 'fruta', nome: 'Fruta', apelidos: ['fruta', 'frutas', 'fruto'], ativa: true, fala: 'uma fruta' },
@@ -165,5 +166,11 @@ export function migrar(cfg) {
       if (!cfg.categorias.some((c) => c.id === id)) cfg.categorias.push(structuredClone(PADRAO.categorias.find((c) => c.id === id)));
     }
   }
+  if (cfg.versaoConfig < 8) {
+    cfg.versaoConfig = 8;
+    cfg.modo = 'presente';      // modo normal = com presentes
+    cfg.desafioACada = 20;      // a cada 20 rodadas, uma rodada desafio
+  }
+
   return cfg;
 }

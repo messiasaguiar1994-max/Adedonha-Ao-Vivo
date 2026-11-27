@@ -138,7 +138,11 @@ export class Jogo extends Emissor {
     this.pendentes.multiplicador = 1;
     this.desafio = null;
     this.catOuro = null;
-    if (this.cfg.modo === 'desafio' || this.pendentes.desafio) this.ativarDesafio(false);
+    // a cada X rodadas do modo normal entra uma rodada desafio (depois volta ao normal)
+    const cada = Number(this.cfg.desafioACada || 0);
+    const rodadaDesafio = cada > 0 && this.rodada % cada === 0 && this.cfg.modo !== 'desafio';
+    if (rodadaDesafio) this.ativarDesafio(true);
+    else if (this.cfg.modo === 'desafio' || this.pendentes.desafio) this.ativarDesafio(false);
     this.pendentes.desafio = false;
     for (const j of this.jogadores.values()) { j.pontosRodada = 0; j.dobro = false; }
 
