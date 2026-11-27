@@ -189,23 +189,23 @@
         return `<div class="pod ${pos === 0 ? 'p1' : ''} ${t.destaque ? 'destaque' : ''}" style="animation-delay:${i * 0.15}s">${avatar(t.nome, t.foto)}<div class="nome">${medalhas[pos]} ${esc(t.nome)}</div><div class="pts">+${t.pts}</div></div>`;
       }).join('')
       : '<div class="vazio">Ninguém pontuou nesta rodada 😅</div>';
-    const nCat = Math.max(1, r.categorias.length);
-    const alturaChips = Math.max(42, Math.floor((330 - nCat * 70) / nCat / 46) * 46 - 4);
-    $('#resultadoCategorias').style.setProperty('--alturaChips', `${alturaChips}px`);
-    const maxChips = Math.max(5, Math.floor(30 / nCat));
-    $('#resultadoCategorias').innerHTML = r.categorias.map((c, i) => {
-      const ord = c.respostas.filter((x) => x.status === 'valida').sort((a, b) => b.pontos - a.pontos);
-      if (c.pergunta) {
-        const chipsP = ord.slice(0, 8).map((x, k) => `<span class="rchip ${k === 0 ? 'unica' : 'repetida'}">${k + 1}º ${esc(x.nome)} <small>+${x.pontos}</small></span>`).join('');
-        return `<div class="resCat" style="animation-delay:${0.3 + i * 0.1}s"><div class="resposta-certa">✅ ${esc(c.pergunta.revelar)}</div><div class="chips">${chipsP || '<span class="vazio">ninguém acertou</span>'}</div></div>`;
-      }
-      const chips = ord.slice(0, maxChips).map((x) => {
-        const cls = x.status === 'invalida' ? 'invalida' : x.status === 'pendente' ? 'pendente' : x.unica ? 'unica' : 'repetida';
-        return `<span class="rchip ${cls}">${esc(x.palavra)} <small>${x.status === 'invalida' ? '✖' : '+' + x.pontos}</small></span>`;
-      }).join('');
-      const mais = ord.length > maxChips ? `<span class="rchip">+${ord.length - maxChips}</span>` : '';
-      return `<div class="resCat" style="animation-delay:${0.3 + i * 0.1}s"><h3>${c.ouro ? '⭐ ' : ''}${esc(c.nome)}</h3><div class="chips">${chips || '<span class="vazio">sem respostas</span>'}${mais}</div></div>`;
-    }).join('');
+    // resposta certa (continha/ditado)
+    const perg = r.categorias.map((c) => c.pergunta).filter(Boolean).pop();
+    $('#respostaCerta').innerHTML = perg ? `<div class="resposta-certa">✅ ${esc(perg.revelar)}</div>` : '';
+    // todo mundo que acertou: foto, nome, palavra e pontos
+    const todos = r.categorias.flatMap((c) => c.respostas.filter((x) => x.status === 'valida').map((x) => ({ ...x, pergunta: !!c.pergunta })))
+      .sort((a, b) => b.pontos - a.pontos);
+    const n = todos.length;
+    const tam = n <= 8 ? 'g' : n <= 18 ? 'm' : n <= 30 ? 'p' : 'pp';
+    const mostrar = todos.slice(0, 60);
+    const resto = n - mostrar.length;
+    $('#todosVotos').className = `votos-${tam}`;
+    $('#todosVotos').innerHTML = n
+      ? mostrar.map((x, k) => `<div class="voto ${x.unica ? 'unica' : ''} ${x.destaque ? 'destaque' : ''}" style="animation-delay:${0.2 + Math.min(k, 30) * 0.03}s">${avatar(x.nome, x.foto)}<div class="vNome">${esc(x.nome)}</div><div class="vPal">${x.pergunta ? `${x.ordem || k + 1}º lugar` : esc(x.palavra)}</div><div class="vPts">+${x.pontos}</div></div>`).join('') + (resto > 0 ? `<div class="voto mais">+${resto}</div>` : '')
+      : '<div class="vazio">Ninguém acertou nesta rodada 😅</div>';
+    // top 3 do ranking geral
+    const med = ['🥇', '🥈', '🥉'];
+    $('#top3Geral').innerHTML = e.ranking.length ? `<div class="t3titulo">🏆 RANKING GERAL</div><div class="t3lista">${e.ranking.slice(0, 3).map((j, i) => `<div class="t3 ${j.destaque ? 'destaque' : ''}"><span class="med">${med[i]}</span>${avatar(j.nome, j.foto)}<span class="n">${esc(j.nome)}</span><span class="p">${j.pontos}</span></div>`).join('')}</div>` : '';
   }
 
   function desenharRanking(e) {

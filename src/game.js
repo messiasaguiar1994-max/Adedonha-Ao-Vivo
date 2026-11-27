@@ -522,7 +522,7 @@ export class Jogo extends Emissor {
       categorias: catsValidas.map((c) => ({
         id: c.id, nome: c.nome, ouro: this.catOuro === c.id,
         pergunta: c.pergunta ? { tipo: c.pergunta.tipo, revelar: c.pergunta.revelar } : null,
-        respostas: porCat[c.id].filter((r) => !c.pergunta || r.status === 'valida').map((r) => ({ id: r.id, nome: r.nome, foto: r.foto, palavra: r.palavra, status: r.status, unica: r.unica, repetida: r.repetida, primeiro: r.primeiro, pontos: r.pontos })),
+        respostas: porCat[c.id].filter((r) => !c.pergunta || r.status === 'valida').map((r) => ({ id: r.id, nome: r.nome, foto: r.foto, palavra: r.palavra, ordem: r.ordem, destaque: this.temDestaque(this.jogadores.get(r.jogadorId)), status: r.status, unica: r.unica, repetida: r.repetida, primeiro: r.primeiro, pontos: r.pontos })),
       })),
     };
   }

@@ -272,3 +272,35 @@ body.fase-sorteio #telaJogo, body.fase-jogando #telaJogo, body.fase-pausado #tel
 #rankingVivo { overflow: hidden; }
 #listaRV .linhaRank.destaque { padding-top: 2px; padding-bottom: 2px; }
 #listaRV .linhaRank.destaque .av { width: 100px; height: 100px; }
+
+/* ---------- resultado: todos que acertaram + top 3 geral ---------- */
+body.fase-resultado #rankingVivo { display: none; }
+#telaResultado { top: 680px !important; bottom: 30px !important; display: none; flex-direction: column; }
+#telaResultado.ativa { display: flex; }
+#telaResultado .tituloSecao { font-size: 50px; margin-bottom: 8px; }
+#podioRodada { margin-bottom: 10px; }
+#telaResultado .pod { width: 250px; padding: 8px; }
+#respostaCerta .resposta-certa { font-size: 38px; margin-bottom: 10px; }
+#todosVotos { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 10px; }
+.voto { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 6px; border-radius: 20px; background: rgba(0,0,0,.42);
+  border: 3px solid rgba(255,210,63,.6); animation: entrar .4s cubic-bezier(.2,1.6,.4,1) both; }
+.voto.unica { border-color: var(--verde); background: rgba(61,220,132,.2); }
+.voto .vNome { font-weight: 800; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
+.voto .vPal { font-weight: 600; opacity: .85; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.voto .vPts { font-family: var(--fonteTitulo); color: var(--verde); line-height: 1.1; }
+.voto.mais { justify-content: center; font-family: var(--fonteTitulo); font-size: 40px; }
+.votos-g .voto { width: 236px; } .votos-g .voto .av { width: 92px; height: 92px; font-size: 40px; } .votos-g .vNome { font-size: 27px; } .votos-g .vPal { font-size: 22px; } .votos-g .vPts { font-size: 32px; }
+.votos-m .voto { width: 186px; } .votos-m .voto .av { width: 70px; height: 70px; font-size: 32px; } .votos-m .vNome { font-size: 22px; } .votos-m .vPal { font-size: 18px; } .votos-m .vPts { font-size: 26px; }
+.votos-p .voto { width: 150px; padding: 6px 4px; } .votos-p .voto .av { width: 56px; height: 56px; font-size: 26px; } .votos-p .vNome { font-size: 19px; } .votos-p .vPal { font-size: 16px; } .votos-p .vPts { font-size: 22px; }
+.votos-pp .voto { width: 120px; padding: 4px 3px; border-width: 2px; } .votos-pp .voto .av { width: 44px; height: 44px; font-size: 20px; } .votos-pp .vNome { font-size: 16px; } .votos-pp .vPal { font-size: 14px; } .votos-pp .vPts { font-size: 18px; }
+/* quem mandou presente: foto 75% maior também aqui */
+.votos-g .voto.destaque .av { width: 161px; height: 161px; } .votos-m .voto.destaque .av { width: 122px; height: 122px; }
+.votos-p .voto.destaque .av { width: 98px; height: 98px; } .votos-pp .voto.destaque .av { width: 77px; height: 77px; }
+.voto.destaque { border-color: #ffd23f; box-shadow: 0 0 22px rgba(255,210,63,.55); }
+.voto.destaque .av { border: 4px solid #ffd23f; }
+#top3Geral { margin-top: 10px; }
+.t3titulo { text-align: center; font-family: var(--fonteTitulo); font-size: 34px; color: var(--amarelo); }
+.t3lista { display: flex; gap: 10px; justify-content: center; }
+.t3 { display: flex; align-items: center; gap: 8px; padding: 6px 16px 6px 6px; border-radius: 40px; background: rgba(0,0,0,.45); font-weight: 800; font-size: 26px; max-width: 330px; }
+.t3 .av { width: 54px; height: 54px; font-size: 24px; } .t3.destaque .av { width: 94px; height: 94px; border: 3px solid #ffd23f; }
+.t3 .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; } .t3 .p { color: var(--verde); } .t3 .med { font-size: 30px; }
