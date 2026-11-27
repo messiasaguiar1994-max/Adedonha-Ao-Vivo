@@ -191,7 +191,17 @@
     if ($('#exemplosChat').dataset.h !== html) { $('#exemplosChat').innerHTML = html; $('#exemplosChat').dataset.h = html; }
   }
   $('#exemplosChat').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ex]'); if (b) { $('#simTexto').value = b.dataset.ex; $('#simTexto').focus(); } });
-  $('#btTestarVoz').onclick = () => acao('teste_voz');
+  $('#btTestarVoz').onclick = () => {
+    acao('teste_voz');
+    // no aplicativo, conta qual voz foi usada
+    setTimeout(() => {
+      try {
+        const f = window.parent.Voz && window.parent.Voz.fonte();
+        if (f === 'natural') toast('Usando a voz natural ✓');
+        else if (f === 'celular') toast('A voz natural não respondeu — usando a voz do celular', '#b07a00');
+      } catch { /* PC */ }
+    }, 9000);
+  };
   $('#btSimSeguir').onclick = () => acao('sim_seguidor', { usuario: $('#simPresUsuario').value || 'Fã' });
   $('#btSimPresente').onclick = () => acao('sim_presente', { usuario: $('#simPresUsuario').value, presente: $('#simPresente').value, quantidade: Number($('#simQtd').value), diamantes: Number($('#simDiam').value) });
 

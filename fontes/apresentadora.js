@@ -152,9 +152,12 @@ function iniciar() {
     estado.ligada = ev.detail?.apresentadora !== false;
     canvas.style.display = estado.ligada ? '' : 'none';
   });
+  // nos anúncios do jogo ele "fala" (cresce e mexe o bico), mesmo se a voz demorar ou falhar
+  const FALAS = { valendo: 4500, stop: 2500, resposta_certa: 3500, melhor_rodada: 6000, nova_letra: 3000, nova_categoria: 3500, nova_pergunta: 3500, desafio: 4000, campeao: 4000, teste_voz: 6000 };
   window.addEventListener('jogo-evento', (ev) => {
     const e = ev.detail || {};
     if (e.tipo === 'seguidor') soltarBalao(e);
+    if (FALAS[e.tipo] && estado.ligada) estado.falaAte = Math.max(estado.falaAte || 0, performance.now() + FALAS[e.tipo]);
   });
 
   // ----- balão de quem segue -----
@@ -222,14 +225,15 @@ function iniciar() {
     if (!estado.pronta || !estado.ligada) return;
     estado.t += dt;
 
-    const grande = estado.falando || agora - estado.fimFala < 500;
+    const anunciando = agora < (estado.falaAte || 0);
+    const grande = estado.falando || anunciando || agora - estado.fimFala < 500;
     const voando = estado.voando && agora < estado.voando.ate;
     if (!voando) estado.voando = null;
 
     const t = estado.t;
     // bico: abre com o volume da voz (voz natural) ou num "tagarelar" quando é a voz do celular
     let boca = 0;
-    if (estado.falando) {
+    if (estado.falando || anunciando) {
       const nivel = typeof window.__nivelVoz === 'function' ? window.__nivelVoz() : null;
       boca = nivel != null ? Math.min(1, nivel * 1.4) : Math.max(0, Math.sin(t * 17) * 0.6 + Math.sin(t * 7.3) * 0.4);
     }

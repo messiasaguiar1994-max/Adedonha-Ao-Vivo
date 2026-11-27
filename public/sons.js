@@ -251,7 +251,7 @@ window.Voz = (() => {
 
   let opcoes = {};
   let falhasNatural = 0;
-  let ctxVoz = null;
+  let ultimaFonte = '';
   // voz natural: pede o áudio ao servidor (Render no app, o próprio PC na versão PC)
   async function falarNatural(texto) {
     const base = typeof window.__servidorVoz === 'function' ? window.__servidorVoz() : '';
@@ -267,19 +267,7 @@ window.Voz = (() => {
     await new Promise((ok, erro) => {
       const a = new Audio(src);
       a.volume = 1;
-      // mede o volume da fala (para o bico do passarinho mexer junto com a voz)
-      try {
-        const C = window.AudioContext || window.webkitAudioContext;
-        ctxVoz = ctxVoz || new C();
-        if (ctxVoz.state !== 'running') ctxVoz.resume();
-        const fonte = ctxVoz.createMediaElementSource(a);
-        const an = ctxVoz.createAnalyser();
-        an.fftSize = 512;
-        fonte.connect(an); an.connect(ctxVoz.destination);
-        const buf = new Uint8Array(an.fftSize);
-        window.__nivelVoz = () => { an.getByteTimeDomainData(buf); let m = 0; for (const v of buf) m = Math.max(m, Math.abs(v - 128)); return Math.min(1, m / 60); };
-        a.addEventListener('ended', () => { window.__nivelVoz = null; });
-      } catch { window.__nivelVoz = null; }
+      // (o volume não passa por efeitos de áudio: assim a voz nunca fica muda)
       a.onended = ok;
       a.onerror = erro;
       const p = a.play();
@@ -295,8 +283,9 @@ window.Voz = (() => {
     try {
       let falou = false;
       if (opcoes.vozNatural !== false && falhasNatural < 3) {
-        try { await falarNatural(texto); falou = true; falhasNatural = 0; } catch { falhasNatural++; setTimeout(() => { falhasNatural = Math.max(0, falhasNatural - 1); }, 60000); }
+        try { await falarNatural(texto); falou = true; falhasNatural = 0; ultimaFonte = 'natural'; } catch { falhasNatural++; setTimeout(() => { falhasNatural = Math.max(0, falhasNatural - 1); }, 60000); }
       }
+      if (!falou) ultimaFonte = 'celular';
       if (falou) { /* ok */ } else if (window.__falarNativo) {
         await window.__falarNativo(texto);
       } else if (window.speechSynthesis) {
@@ -316,5 +305,5 @@ window.Voz = (() => {
     window.dispatchEvent(new Event('voz-fim'));
     Musica.abaixar(false);
   }
-  return { falar, configurar(opc) { ligada = opc.voz !== false; opcoes = opc; } };
+  return { falar, configurar(opc) { ligada = opc.voz !== false; opcoes = opc; }, fonte: () => ultimaFonte };
 })();
