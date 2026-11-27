@@ -109,10 +109,12 @@ function iniciar() {
   // gira um osso para que ele aponte numa direção (relativa ao corpo dela), misturando com a animação
   const _a = new THREE.Vector3(); const _b = new THREE.Vector3(); const _q = new THREE.Quaternion(); const _qw = new THREE.Quaternion(); const _qp = new THREE.Quaternion(); const _qr = new THREE.Quaternion();
   function apontar(osso, filho, dir, peso) {
-    if (!osso || !filho || peso <= 0) return;
-    osso.updateWorldMatrix(true, false); filho.updateWorldMatrix(false, false);
-    osso.getWorldPosition(_a); filho.getWorldPosition(_b);
-    const agoraDir = _b.sub(_a).normalize();
+    if (!osso || peso <= 0) return;
+    osso.updateWorldMatrix(true, false);
+    let agoraDir;
+    if (filho) { filho.updateWorldMatrix(false, false); osso.getWorldPosition(_a); filho.getWorldPosition(_b); agoraDir = _b.sub(_a); }
+    if (!agoraDir || agoraDir.lengthSq() < 1e-10) agoraDir = new THREE.Vector3(0, 1, 0).applyQuaternion(osso.getWorldQuaternion(_qw)); // eixo do osso
+    agoraDir.normalize();
     estado.modelo.getWorldQuaternion(_qr);
     const alvoDir = dir.clone().normalize().applyQuaternion(_qr);
     _q.setFromUnitVectors(agoraDir, alvoDir);
@@ -222,7 +224,15 @@ function iniciar() {
       boca = nivel != null ? Math.min(1, nivel * 1.4) : Math.max(0, Math.sin(t * 17) * 0.6 + Math.sin(t * 7.3) * 0.4);
     }
     estado.boca = (estado.boca || 0) + (boca - (estado.boca || 0)) * Math.min(1, dt * 18);
-    if (rosto) rosto.morphTargetInfluences[iBoca] = estado.boca * 0.85;
+    if (rosto) rosto.morphTargetInfluences[iBoca] = estado.boca * 1.5;
+
+    // falando: cabeça erguida, olhando para frente (a animação de fala abaixa a cabeça)
+    estado.olha = (estado.olha || 0) + ((grande && !voando ? 1 : 0) - (estado.olha || 0)) * Math.min(1, dt * 6);
+    if (estado.olha > 0.01) {
+      apontar(ossos.Spine2, ossos.Neck, new THREE.Vector3(0, 1, 0), estado.olha * 0.6);
+      apontar(ossos.Neck, ossos.Head, new THREE.Vector3(0, 1, 0.02), estado.olha * 0.9);
+      apontar(ossos.Head, null, new THREE.Vector3(Math.sin(t * 1.3) * 0.06, 1, -0.06), estado.olha);
+    }
 
     // braço direito: aceno a cada ~7 s quando está dançando; erguido segurando o barbante quando voa
     const ciclo = t % 7;
