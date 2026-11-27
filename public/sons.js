@@ -241,11 +241,13 @@ window.Voz = (() => {
   }
   if (window.speechSynthesis) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
 
-  // fila: uma frase espera a outra terminar (nada é cortado no meio)
+  // fila: uma frase espera a outra terminar (nada é cortado no meio).
+  // O áudio da voz natural já começa a ser preparado na hora; só toca quando chegar a vez.
   let fila = Promise.resolve();
   function falar(texto) {
     if (!ligada || !texto) return fila;
-    fila = fila.then(() => falarAgora(texto));
+    const prep = (opcoes.vozNatural !== false && falhasNatural < 3) ? prepararNatural(texto).catch(() => { falhasNatural++; setTimeout(() => { falhasNatural = Math.max(0, falhasNatural - 1); }, 60000); return null; }) : Promise.resolve(null);
+    fila = fila.then(() => falarAgora(texto, prep));
     return fila;
   }
 
@@ -253,56 +255,91 @@ window.Voz = (() => {
   let falhasNatural = 0;
   let ultimaFonte = '';
   // voz natural: pede o áudio ao servidor (Render no app, o próprio PC na versão PC)
-  async function falarNatural(texto) {
+  async function prepararNatural(texto) {
     const base = typeof window.__servidorVoz === 'function' ? window.__servidorVoz() : '';
     const sinal = (n) => `${n >= 0 ? '+' : ''}${Math.round(n)}%`;
-    const url = `${base}/voz?t=${encodeURIComponent(texto)}&v=${encodeURIComponent(opcoes.vozNome || 'pt-BR-ThalitaMultilingualNeural')}&p=${encodeURIComponent(sinal(opcoes.vozTom ?? 12))}&r=${encodeURIComponent(sinal(opcoes.vozVelocidade ?? 0))}`;
+    const url = `${base}/voz?t=${encodeURIComponent(texto)}&v=${encodeURIComponent(opcoes.vozNome || 'pt-BR-ThalitaMultilingualNeural')}&p=${encodeURIComponent(sinal(opcoes.vozTom ?? 0))}&r=${encodeURIComponent(sinal(opcoes.vozVelocidade ?? 0))}`;
     const ctrl = new AbortController();
-    const limite = setTimeout(() => ctrl.abort(), 7000);
+    const limite = setTimeout(() => ctrl.abort(), 8000);
     const r = await fetch(url, { signal: ctrl.signal });
     clearTimeout(limite);
     if (!r.ok) throw new Error('voz');
     const blob = await r.blob();
-    const src = URL.createObjectURL(blob);
-    await new Promise((ok, erro) => {
-      const a = new Audio(src);
-      a.volume = 1;
-      // (o volume não passa por efeitos de áudio: assim a voz nunca fica muda)
-      a.onended = ok;
-      a.onerror = erro;
-      const p = a.play();
-      if (p && p.catch) p.catch(erro);
-      setTimeout(ok, 15000);
-    });
-    URL.revokeObjectURL(src);
+    // volume da fala ao longo do tempo (para a boca acompanhar as sílabas). Só leitura: não mexe no som.
+    let envelope = null;
+    try {
+      const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const buf = await new Off(1, 1, 22050).decodeAudioData(await blob.arrayBuffer());
+      const dados = buf.getChannelData(0); const passo = Math.floor(buf.sampleRate * 0.03);
+      envelope = [];
+      for (let i = 0; i < dados.length; i += passo) { let soma = 0; const f = Math.min(dados.length, i + passo); for (let k = i; k < f; k++) soma += dados[k] * dados[k]; envelope.push(Math.sqrt(soma / Math.max(1, f - i))); }
+      const max = Math.max(...envelope, 0.0001);
+      envelope = envelope.map((v) => Math.min(1, v / max));
+    } catch { envelope = null; }
+    return { blob, envelope };
   }
 
-  async function falarAgora(texto) {
+  function comecou() {
     Musica.abaixar(true);
     window.dispatchEvent(new Event('voz-inicio'));
+  }
+
+  async function tocarNatural(pronto) {
+    const src = URL.createObjectURL(pronto.blob);
     try {
+      await new Promise((ok, erro) => {
+        const a = new Audio(src);
+        a.volume = 1;
+        // (o volume não passa por efeitos de áudio: assim a voz nunca fica muda)
+        let comecado = false;
+        a.onplaying = () => {
+          if (comecado) return; comecado = true;
+          if (pronto.envelope) window.__nivelVoz = () => (a.paused || a.ended ? 0 : pronto.envelope[Math.floor(a.currentTime / 0.03)] || 0);
+          comecou();
+        };
+        a.onended = ok;
+        a.onerror = erro;
+        const p = a.play();
+        if (p && p.catch) p.catch(erro);
+        setTimeout(ok, 15000);
+      });
+    } finally { URL.revokeObjectURL(src); }
+  }
+
+  async function falarAgora(texto, prep) {
+    let iniciou = false;
+    const marcar = () => { iniciou = true; };
+    window.addEventListener('voz-inicio', marcar, { once: true });
+    try {
+      const pronto = await prep;
       let falou = false;
-      if (opcoes.vozNatural !== false && falhasNatural < 3) {
-        try { await falarNatural(texto); falou = true; falhasNatural = 0; ultimaFonte = 'natural'; } catch { falhasNatural++; setTimeout(() => { falhasNatural = Math.max(0, falhasNatural - 1); }, 60000); }
+      if (pronto) {
+        try { await tocarNatural(pronto); falou = true; falhasNatural = 0; ultimaFonte = 'natural'; } catch { /* cai na voz do celular */ }
       }
-      if (!falou) ultimaFonte = 'celular';
-      if (falou) { /* ok */ } else if (window.__falarNativo) {
-        await window.__falarNativo(texto);
-      } else if (window.speechSynthesis) {
-        await new Promise((ok) => {
-          const u = new SpeechSynthesisUtterance(texto);
-          u.lang = 'pt-BR';
-          if (vozPT) u.voice = vozPT;
-          u.rate = 1.05;
-          u.pitch = 1.2;
-          u.onend = ok; u.onerror = ok;
-          speechSynthesis.speak(u);
-          setTimeout(ok, 9000);
-        });
+      if (!falou) {
+        ultimaFonte = 'celular';
+        window.__nivelVoz = null;
+        if (window.__falarNativo) {
+          comecou();
+          await window.__falarNativo(texto);
+        } else if (window.speechSynthesis) {
+          await new Promise((ok) => {
+            const u = new SpeechSynthesisUtterance(texto);
+            u.lang = 'pt-BR';
+            if (vozPT) u.voice = vozPT;
+            u.rate = 1.05;
+            u.pitch = 1.1;
+            u.onstart = comecou;
+            u.onend = ok; u.onerror = ok;
+            speechSynthesis.speak(u);
+            setTimeout(ok, 9000);
+          });
+        }
       }
     } catch { /* sem voz disponível */ }
+    window.removeEventListener('voz-inicio', marcar);
     window.__nivelVoz = null;
-    window.dispatchEvent(new Event('voz-fim'));
+    if (iniciou) window.dispatchEvent(new Event('voz-fim'));
     Musica.abaixar(false);
   }
   return { falar, configurar(opc) { ligada = opc.voz !== false; opcoes = opc; }, fonte: () => ultimaFonte };

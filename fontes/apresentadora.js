@@ -130,6 +130,7 @@ function iniciar() {
   window.addEventListener('voz-fim', () => { estado.falando = false; estado.fimFala = performance.now(); });
   window.addEventListener('efeitos-jogo', (ev) => {
     estado.ligada = ev.detail?.apresentadora !== false;
+    estado.vozLigada = ev.detail?.voz !== false;
     canvas.style.display = estado.ligada ? '' : 'none';
   });
   // nos anúncios do jogo ela "fala" (cresce e mexe a boca), mesmo se a voz demorar ou falhar
@@ -137,7 +138,7 @@ function iniciar() {
   window.addEventListener('jogo-evento', (ev) => {
     const e = ev.detail || {};
     if (e.tipo === 'seguidor') soltarBalao(e);
-    if (FALAS[e.tipo] && estado.ligada) estado.falaAte = Math.max(estado.falaAte || 0, performance.now() + FALAS[e.tipo]);
+    if (FALAS[e.tipo] && estado.ligada && estado.vozLigada === false) estado.falaAte = Math.max(estado.falaAte || 0, performance.now() + FALAS[e.tipo]);
   });
 
   // ----- balão de quem segue -----

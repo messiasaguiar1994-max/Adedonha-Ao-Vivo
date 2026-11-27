@@ -29,7 +29,7 @@ export const PADRAO = {
   tempoResultado: 15,        // segundos mostrando o resultado
   tempoRanking: 8,           // segundos mostrando o ranking entre rodadas
   rodadaAutomatica: true,    // começa a próxima rodada sozinha
-  versaoConfig: 8,
+  versaoConfig: 9,
   letras: 'ABCDEFGHIJLMNOPRSTUV',
   modo: 'presente',          // competitivo | sobrevivencia | relampago | presente | desafio
   desafioACada: 20,          // a cada 20 rodadas entra uma rodada desafio (0 = nunca)
@@ -109,7 +109,7 @@ export const PADRAO = {
     voz: true,             // voz que anuncia a categoria e a letra
     vozNatural: true,      // voz neural (mais natural) vinda do servidor; se falhar, usa a do celular
     vozNome: 'pt-BR-ThalitaMultilingualNeural',
-    vozTom: 12,            // % mais agudo (voz mais doce)
+    vozTom: 0,             // % mais agudo (0 = voz natural, sem distorcer)
     vozVelocidade: 0,      // % mais rápida/lenta
     musica: true,          // música de fundo
     volumeMusica: 0.3,
@@ -175,6 +175,10 @@ export function migrar(cfg) {
     cfg.versaoConfig = 8;
     cfg.modo = 'presente';      // modo normal = com presentes
     cfg.desafioACada = 20;      // a cada 20 rodadas, uma rodada desafio
+  }
+  if (cfg.versaoConfig < 9) {
+    cfg.versaoConfig = 9;
+    if (cfg.efeitos && cfg.efeitos.vozTom === 12) cfg.efeitos.vozTom = 0; // agudo deixava a voz artificial
   }
 
   return cfg;
